@@ -4,35 +4,40 @@
  > Created Time: 2015-03-15
  ************************************************************************/
 
-/* this file is just a pseduo-like code to explain how a 
-   sync function call an aysnc function.
-   when we finished our framework, this testcase should be rewrite
-   */
+#include <boost/coroutine/all.hpp>
+#include <iostream>
 
-typedef boost::coroutines::coroutine< void()> coro_t;
+typedef boost::coroutines::coroutine< void(void)> coro_t;
 
-void async(coro_t::caller_type &ca, event* ev){
+coro_t* ca_t;
+
+void _async(){
 	// do something 
 	
 	// yield and return to the caller
-	ca();
+	(*ca_t)();
 
 	// do something else
 	
 	// trigger the event to remind the caller the job has been finished
-	ev->ready();
 }
-void sync(coro_t::caller_type &ca){
+
+void temp(){
+	std::cout << "before async" << std::endl;
+	_async();
+	std::cout << "after async" << std::endl;
+}
+
+void _sync(coro_t::caller_type &ca){
 	coro_t *c;
+	ca_t = &ca;
 
-	event* ev = new event();
-	c = new coro_t(boost::bind(async, _1, ev));
-
-	if(wait(ev)){
-		ca();
-	}
+	std::cout << "before temp" << std::endl;
+	temp();
+	std::cout << "after temp" << std::endl;
 }
 
 int main(){
-	coro_t task(sync);
+	coro_t c(_sync);
+	c();
 }
