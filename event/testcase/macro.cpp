@@ -1,7 +1,7 @@
 /*************************************************************************
  > File Name: test.cpp
  > Author: Mengxing Liu
- > Created Time: 2015-03-11
+ > Created Time: 2015-03-23
  ************************************************************************/
 
 #include <boost/coroutine/all.hpp>
@@ -9,6 +9,7 @@
 
 typedef boost::coroutines::coroutine<void(void)> coro_t;
 
+#define coro_f(x, ...) void x(coro_t::caller_type& ca, __VA_ARGS__)
 
 class task{
 	int closure;
@@ -17,7 +18,7 @@ public:
 
 	}
 
-	void func(coro_t::caller_type& ca, coro_t* c){
+	coro_f(func, coro_t* c){
 		ca();
 		std::cout << closure << std::endl;
 	}

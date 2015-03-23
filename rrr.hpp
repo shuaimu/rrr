@@ -19,7 +19,9 @@
 #include "rpc/polling.hpp"
 #include "rpc/client.hpp"
 #include "rpc/server.hpp"
+#include "event/scheduler.hpp"
 
 namespace base = rrr;
+
 
 #endif // RRR_HPP_

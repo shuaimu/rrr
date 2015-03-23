@@ -2,52 +2,30 @@
  > File Name: schedular.hpp
  > Author: Mengxing Liu
 *************************************************************************/
-
-#ifndef SCHEDULER_HPP
-#define SCHEDULER_HPP
+#pragma once
 
 #include <boost/coroutine/all.hpp>
-#include "event.hpp"
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
+typedef boost::coroutines::coroutine< void(void) > coro_t;
+typedef boost::function< void(coro_t::caller_type&) > fp;
 
-class Task;
-class Event;
+namespace rrr{
 
-typedef boost::coroutines::coroutine<void()> coro_t;
-
-class Scheduler{
-	std::vector<Task*> task_queue;
-	std::map<std::mutex, std::set<Event*> > event_map;
-
-	std::mutex mtx;
-	int count;
+class Coroutine{
 public:
-	Scheduler(){
-		count = 1;
-	}
-	void add_task(Task* const task){
-		task_queue.insert(task);	
-	}
+	static coro_t* c;
+	static coro_t::caller_type *ca;
 
-	bool get_lock(Event* const ev){
-		if (count == 1){
-			mtx.try_lock();
-			return true;
-		}else{
-			event_map[mtx].insert(ev);
-			return false;
-		}
-	}
-	void release_lock(Task* task){
-		mtx.unlock();
-		if (event_map[mtx].size() > 0){
-			Event* ev = *(event_map[mtx].begin());
-			ev->trigger();
-			(*ev->coro)();
-		}
-	}
+	static void mk_coro(fp f, coro_t* ct = NULL);
 
-	void run();
+	static coro_t* get_cur_coro();
 
+	static void set_ca(coro_t::caller_type* cat);
+
+	static coro_t::caller_type* get_cur_ca();
 };
-#endif
+
+} // namespace base
+
