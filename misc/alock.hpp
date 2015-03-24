@@ -21,6 +21,7 @@
 
 #include "alarm.hpp"
 #include "dball.hpp"
+#include "event/event.hpp"
 
 #define ALOCK_TIMEOUT (200000) // 0.2s;
 //#define ALOCK_TIMEOUT (0) // no_timeout;
@@ -648,7 +649,22 @@ public:
 
 class ALockGroup {
 public:
+    class LockEvent:public Event{
+    public:
+        bool timeout;
+        int size;
+        int count;
+        LockEvent(coro_t* c, int s=1): Event(c), size(s), count(0), timeout(false){
 
+        }
+        void add(){
+            count++; 
+            verify(count <= size);
+            if (count == size){
+                trigger();
+            }
+        }
+    };
     enum status_t {INIT, WAIT, LOCK, TIMEOUT, UNLOCK};
 
     std::recursive_mutex mtx_locks_;

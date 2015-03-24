@@ -1,23 +1,75 @@
 #include "scheduler.hpp"
+#include "base/debugging.hpp"
+#include "event.hpp"
 
-coro_t::caller_type* rrr::Coroutine::ca = NULL;
-coro_t* rrr::Coroutine::c = NULL;
+class Event;
 
-void rrr::Coroutine::mk_coro(fp f, coro_t* ct){
-	c = new coro_t(f);	
+coro_t* rrr::Coroutine::_c;
+coro_t::caller_type* rrr::Coroutine::_ca;
+std::map< coro_t*, coro_t::caller_type* > rrr::Coroutine::_map;
+
+std::vector<rrr::Event*> rrr::EventMgr::wait_event;
+std::vector<rrr::Event*> rrr::EventMgr::trigger_event;
+
+void rrr::Coroutine::mkcoroutine(fp f, coro_t* ct){
+	_c = new coro_t(f);	
 	if (ct){
-		ct = c;
+		ct = _c;
 	}
 }
 
-coro_t* rrr::Coroutine::get_cur_coro(){
-	return c;
+void rrr::Coroutine::init(coro_t::caller_type* cat){
+	verify(_c != NULL);
+	init(_c, cat);
 }
 
-void rrr::Coroutine::set_ca(coro_t::caller_type* cat){
-	ca = cat;
+void rrr::Coroutine::init(coro_t* c, coro_t::caller_type* ca){
+	if (_map.find(c) == _map.end()){
+		_map[c] = ca;
+	}else{
+		verify(_map[c] == ca);
+	}
 }
 
-coro_t::caller_type* rrr::Coroutine::get_cur_ca(){
-	return ca;
+coro_t* rrr::Coroutine::get_c(){
+	return _c;
+}
+
+void rrr::Coroutine::yeild(){
+	verify(_c != NULL);
+	coro_t* tmp = _c;
+	_c = NULL;
+	_ca = NULL;
+
+	(*_map[tmp])();
+}
+
+void rrr::Coroutine::yeildto(coro_t *ct){
+	verify(_c == NULL);
+	_c = ct;
+	(*ct)();
+}
+
+
+void rrr::EventMgr::wait(Event* ev){
+	if (ev->status() == Event::TRIGGER || 
+		ev->status() == Event::CANCEL){
+		return;
+	}
+	wait_event.push_back(ev);
+	Coroutine::yeild(); 
+}
+
+bool rrr::EventMgr::search_all_trigger(){
+	bool find = false;
+	auto ite = wait_event.begin();
+	for (; ite != wait_event.end(); ite++){
+		Event* ev = (Event*)(*ite);
+		if (ev->status() == Event::TRIGGER){
+			wait_event.erase(ite);
+			trigger_event.push_back(ev);
+			find = true;
+		}
+	}
+	return find; 
 }
