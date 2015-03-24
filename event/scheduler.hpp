@@ -12,6 +12,8 @@
 
 typedef boost::coroutines::coroutine< void(void) > coro_t;
 typedef boost::function< void(coro_t::caller_type&) > fp;
+
+#define coro_f(x, ...) void x(coro_t::caller_type& ca, __VA_ARGS__)
 #define WAIT(x) rrr:EventMgr::wait(x)
 
 namespace rrr{
@@ -20,8 +22,11 @@ class Event;
 class Coroutine{
 	static std::map< coro_t*, coro_t::caller_type* > _map;
 public:
-	static coro_t* _c;
-	static coro_t::caller_type *_ca;
+	static coro_t _c;
+	static coro_t::caller_type _ca;
+	
+	static coro_t* _ct;
+	static coro_t::caller_type* _cat;
 
 	static void mkcoroutine(fp f, coro_t* ct = NULL);
 	static void init(coro_t::caller_type*);
