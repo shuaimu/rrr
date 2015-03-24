@@ -1,22 +1,30 @@
-#ifndef EVENT_HPP
-#define EVENT_HPP
+#pragma once
 
-#include "task.hpp"
+#include "scheduler.hpp"
 
+namespace rrr{
 class Event{
-	coro_t* coro;
-	bool triggered;
 public:
-	Event(Task* task): coro(task->cur_coro), triggered(false){
+	enum status_t{
+		WAIT, CANCEL, TRIGGER
+	};
+	status_t _status;
 
+	coro_t* coro;
+
+	Event(coro_t* t): coro(t), _status(WAIT){
 	}
 	void trigger(){
-		this.triggered = true;
+		_status = TRIGGER;	
+	}
+
+	void cancel(){
+		_status = CANCEL;
 	}
 
 	bool status(){
-		return triggered;
+		return _status;
 	}
 };
 
-#endif
+}

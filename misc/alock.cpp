@@ -589,6 +589,8 @@ void ALockGroup::lock_all(const std::function<void(void)>& yes_cb,
             }
             });
 
+//    LockEvent* ev = new LockEvent(Coroutine::get_c());
+
     decltype(tolock_) tmp;
 
     swap(tmp, tolock_);
@@ -609,6 +611,17 @@ void ALockGroup::lock_all(const std::function<void(void)>& yes_cb,
             this->db_->trigger();
         };
 
+/*  callback for custom event;
+/*  
+        auto y_cb = [ev, this, alock](uint64_t id){
+            this->locked_[alock] = id;
+            ev->add();    
+        };
+        auto n_cb = [ev, this]() {
+            ev->timeout = true;
+            ev->add();
+        };
+*/
         auto _wound_callback = [this, alock] () -> int {
             int ret = wound_callback_();
             if (ret == 0)
@@ -621,6 +634,16 @@ void ALockGroup::lock_all(const std::function<void(void)>& yes_cb,
         //            alocks_[alock] = areq_id;
     }
     //        mtx_locks_.unlock();
+
+/*
+    WAIT(ev);
+    if(ev->timeout){
+        this->cas_status(WAIT, LOCK);
+        this->yes_callback_();
+    }else{
+        this->no_callback_();
+        this->abort_all_locked();
+    } */
 }
 
 

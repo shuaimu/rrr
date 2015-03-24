@@ -78,8 +78,22 @@ add_library(rrr
     utils/mpr_thread_pool.h
     utils/mtime.h
     utils/safe_assert.h
+    event/scheduler.hpp
+    event/scheduler.cpp
     rrr.h
     rrr.hpp
 )
 
+add_executable(server test/s.cpp)
+add_executable(client test/c.cpp)
 
+target_link_libraries(
+    server
+    rrr
+    ${CMAKE_THREAD_LIBS_INIT}
+)
+target_link_libraries(
+    client
+    rrr
+    ${CMAKE_THREAD_LIBS_INIT}
+)

@@ -1,3 +1,5 @@
 *.pyc
 *.swp
-event/build/*
+build/*
+test/build/*
+event/testcase/build/*

@@ -1,52 +1,51 @@
 /*************************************************************************
- > File Name: schedular.hpp
+ > File Name: scheduler.hpp
  > Author: Mengxing Liu
+ > Time: 2015-03-23
 *************************************************************************/
-
-#ifndef SCHEDULER_HPP
-#define SCHEDULER_HPP
+#pragma once
 
 #include <boost/coroutine/all.hpp>
-#include "event.hpp"
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+#include <map>
 
-class Task;
+typedef boost::coroutines::coroutine< void(void) > coro_t;
+typedef boost::function< void(coro_t::caller_type&) > fp;
+#define WAIT(x) rrr:EventMgr::wait(x)
+
+namespace rrr{
 class Event;
 
-typedef boost::coroutines::coroutine<void()> coro_t;
-
-class Scheduler{
-	std::vector<Task*> task_queue;
-	std::map<std::mutex, std::set<Event*> > event_map;
-
-	std::mutex mtx;
-	int count;
+class Coroutine{
+	static std::map< coro_t*, coro_t::caller_type* > _map;
 public:
-	Scheduler(){
-		count = 1;
-	}
-	void add_task(Task* const task){
-		task_queue.insert(task);	
-	}
+	static coro_t* _c;
+	static coro_t::caller_type *_ca;
 
-	bool get_lock(Event* const ev){
-		if (count == 1){
-			mtx.try_lock();
-			return true;
-		}else{
-			event_map[mtx].insert(ev);
-			return false;
-		}
-	}
-	void release_lock(Task* task){
-		mtx.unlock();
-		if (event_map[mtx].size() > 0){
-			Event* ev = *(event_map[mtx].begin());
-			ev->trigger();
-			(*ev->coro)();
-		}
-	}
+	static void mkcoroutine(fp f, coro_t* ct = NULL);
+	static void init(coro_t::caller_type*);
+	static void init(coro_t* c, coro_t::caller_type* ca);
+	static coro_t* get_c();
 
-	void run();
-
+	static void yeild();
+	static void yeildto(coro_t* c);	
 };
-#endif
+
+//coro_t* Coroutine::_c;
+//coro_t::caller_type* Coroutine::_ca;
+//std::map< coro_t*, coro_t::caller_type* > Coroutine::_map;
+
+class EventMgr{
+	static std::vector<Event* > wait_event;
+	static std::vector<Event* > trigger_event;
+public:
+	static void wait(Event* ev);
+	static bool search_all_trigger();
+};
+
+//std::vector<Event* > Scheduler::wait_event;
+//std::vector<Event* > Scheduler::trigger_event;
+
+} // namespace base
+

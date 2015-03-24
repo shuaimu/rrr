@@ -12,6 +12,7 @@ typedef boost::coroutines::coroutine<void(void)> coro_t;
 
 class task;
 
+coro_t* c;
 class task{
 	int closure;
 public:
@@ -21,7 +22,11 @@ public:
 
 	static void fn(coro_t::caller_type& ca, task* task, coro_t* c){
 		ca();
-		std::cout << task->closure << std::endl;
+		std::cout << "local print 1" << std::endl;
+		ca();
+		std::cout << "local print 2" << std::endl;
+		ca();
+		std::cout << "local print 3" << std::endl;
 	}
 
 	coro_t* start(){
@@ -31,11 +36,26 @@ public:
 	}
 };
 
-coro_t* getc(){
-	task t;
-	return t.start();
+void run1(){
+	std::cout << "main print 1" << std::endl;
+	(*c)();
+	std::cout << "main print 2" << std::endl;
 }
+
+void run2(){
+	std::cout << "main print 3" << std::endl;
+	(*c)();
+	std::cout << "main print 4" << std::endl;
+}
+
 int main(){
-	coro_t* c = getc();
+	task t;
+	c = t.start();
+
+	run1();
+	run2();
+
+	std::cout << "main print 5" << std::endl;
 	(*c)();
 }
+

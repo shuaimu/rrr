@@ -99,6 +99,7 @@ int main(){
 	count = 1;
 
 	coro_t c1(txn1, NULL);
+	std::cout << "c1: " << &c1 << std::endl;
 	c1((void*) &c1);
 	
 	coro_t c2(txn2, NULL);

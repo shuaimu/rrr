@@ -10,8 +10,6 @@
 typedef boost::coroutines::coroutine<void(void)> coro_t;
 
 
-class task;
-
 class task{
 	int closure;
 public:
@@ -19,14 +17,14 @@ public:
 
 	}
 
-	static void fn(coro_t::caller_type& ca, task* task, coro_t* c){
+	void func(coro_t::caller_type& ca, coro_t* c){
 		ca();
-		std::cout << task->closure << std::endl;
+		std::cout << closure << std::endl;
 	}
 
 	coro_t* start(){
 		coro_t *c;
-		c = new coro_t(boost::bind(task::fn, _1, this, c));
+		c = new coro_t( boost::bind(&task::func, this, _1, c));
 		return c;
 	}
 };
