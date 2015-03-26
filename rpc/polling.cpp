@@ -20,6 +20,7 @@
 #include "utils.hpp"
 #include "polling.hpp"
 
+#include "event/event.hpp"
 using namespace std;
 
 namespace rrr {
@@ -213,6 +214,9 @@ void PollMgr::PollThread::poll_loop() {
 
             poll->release();
         }
+
+        // after each poll loop, remove finished coroutine
+        rrr::Coroutine::recovery();
     }
 
     close(poll_fd_);

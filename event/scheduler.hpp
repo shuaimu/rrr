@@ -9,6 +9,8 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <map>
+#include <set>
+#include <pthread.h>
 
 typedef boost::coroutines::coroutine< void(void) > coro_t;
 typedef boost::function< void(coro_t::caller_type&) > fp;
@@ -19,38 +21,46 @@ typedef boost::function< void(coro_t::caller_type&) > fp;
 namespace rrr{
 class Event;
 
-class Coroutine{
-	static std::map< coro_t*, coro_t::caller_type* > _map;
-public:
-	static coro_t _c;
-	static coro_t::caller_type _ca;
-	
-	static coro_t* _ct;
-	static coro_t::caller_type* _cat;
+class CoroMgr{
+	std::vector<coro_t*> c_set;
+	std::vector<Event* > wait_event;
+	std::vector<Event* > trigger_event;
+	std::map<coro_t*, coro_t::caller_type*> _map;
 
-	static void mkcoroutine(fp f, coro_t* ct = NULL);
-	static void init(coro_t::caller_type*);
-	static void init(coro_t* c, coro_t::caller_type* ca);
+	coro_t* _c;
+	coro_t::caller_type* _ca;
+public:
+	void mkcoroutine(fp f);
+	void reg(coro_t::caller_type*);
+	void reg(coro_t*, coro_t::caller_type*);
+	coro_t* get_c();
+
+	void recovery();
+	
+	void wait(Event*);
+	bool search_all_trigger();
+};	
+
+
+class Coroutine{
+public:
+	static std::map<pthread_t, CoroMgr*> cmgr_map;
+	static void reg_cmgr();
+	static void mkcoroutine(fp f);
+
+	static void reg(coro_t::caller_type*);
+	static void reg(coro_t* c, coro_t::caller_type* ca);
 	static coro_t* get_c();
 
+	// do we need interface of yeild? or just wait
 	static void yeild();
+	static void wait(Event*);
+
 	static void yeildto(coro_t* c);	
+
+	static void recovery();
+	static void init();
 };
-
-//coro_t* Coroutine::_c;
-//coro_t::caller_type* Coroutine::_ca;
-//std::map< coro_t*, coro_t::caller_type* > Coroutine::_map;
-
-class EventMgr{
-	static std::vector<Event* > wait_event;
-	static std::vector<Event* > trigger_event;
-public:
-	static void wait(Event* ev);
-	static bool search_all_trigger();
-};
-
-//std::vector<Event* > Scheduler::wait_event;
-//std::vector<Event* > Scheduler::trigger_event;
 
 } // namespace base
 
