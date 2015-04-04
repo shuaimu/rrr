@@ -1,3 +1,5 @@
+#pragma once
+
 #include "event.hpp"
 #include "base/debugging.hpp"
 #include "base/logging.hpp"

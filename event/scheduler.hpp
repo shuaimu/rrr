@@ -16,6 +16,7 @@ typedef boost::coroutines::coroutine< void(void) > coro_t;
 typedef boost::function< void(coro_t::caller_type&) > fp;
 
 #define COROUTINE
+#define COROUTINE_COUNT
 
 #ifdef COROUTINE
 	#define coro_f(x, ...) void x(coro_t::caller_type& ca, __VA_ARGS__)
@@ -84,7 +85,9 @@ public:
 
 	static void recovery();
 	static void init();
+#ifdef COROUTINE_COUNT
+	static void report();
+#endif
 };
-
 } // namespace base
 

@@ -17,6 +17,11 @@ std::allocator<coro_t> allo;
 bool in_coroutine = false;
 pthread_t work_pid = 0;
 
+#ifdef COROUTINE_COUNT
+int coro_count = 0;
+int switch_cout = 0;
+#endif
+
 CoroMgr* Coroutine::reg_cmgr(pthread_t t){
 	Log_info("thread %x register CoroMgr");
 	if (cmgr_map.find(t) != cmgr_map.end()){
@@ -54,7 +59,9 @@ CoroMgr* Coroutine::get_cmgr(pthread_t pid){
 }
 
 void Coroutine::mkcoroutine(fp f){
-	
+#ifdef COROUTINE_COUNT
+	coro_count += 1;
+#endif	
 	pthread_t t = pthread_self();
 	if (cmgr_map.find(t) == cmgr_map.end()){
 		Log_info("register Coroutine manager");
@@ -120,6 +127,14 @@ void Coroutine::init(){
 
 	MyAllocator::init();
 }
+
+#ifdef COROUTINE_COUNT
+
+void Coroutine::report(){
+	Log_info("coroutine count: %d", coro_count);
+	Log_info("coroutine switch: %d", coro_count + switch_cout);
+}
+#endif
 
 void CoroMgr::mkcoroutine(fp f){
 	_c = new coro_t(f, attr, stack_allocator, allo);
@@ -194,6 +209,10 @@ void CoroMgr::wait(Event* ev){
 		return;
 	}
 
+#ifdef COROUTINE_COUNT
+	switch_cout += 1;
+#endif
+
 	wait_event.push_back(ev);
 	//Log_info("thread: %x, coroutine: %x, wait_event size: %d status: %d ev: %x", pthread_self(), ev->ca, wait_event.size(), ev->status(), ev);
 	in_coroutine = false;
@@ -221,7 +240,7 @@ void CoroMgr::resume_triggered_event(){
 //	Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
     while(search_all_trigger())
     {   
-        Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
+//        Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
         while(trigger_event.size() > 0){
             Event* ev = trigger_event[0];
             
