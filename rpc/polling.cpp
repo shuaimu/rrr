@@ -186,7 +186,6 @@ void PollMgr::PollThread::poll_loop() {
         //recovery the useless
 
         cmgr->resume_triggered_event();
-        cmgr->recovery();
 #endif
 
         // after each poll loop, remove uninterested pollables

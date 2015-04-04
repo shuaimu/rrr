@@ -1,7 +1,7 @@
 
 
 #include "alock.hpp"
-
+#include "event/dballevent.hpp"
 
 namespace rrr {
 
@@ -578,7 +578,9 @@ void ALockGroup::lock_all(const std::function<void(void)>& yes_cb,
     yes_callback_ = yes_cb;
     no_callback_ = no_cb;
 
-
+#ifdef COROUTINE
+    DballEvent* ev = new DballEvent(Coroutine::get_ca(), tolock_.size());
+#else
     db_ = new DragonBall(tolock_.size(), [this] () {
             if (this->cas_status(WAIT, LOCK)) {
             this->yes_callback_();
@@ -588,6 +590,7 @@ void ALockGroup::lock_all(const std::function<void(void)>& yes_cb,
             this->abort_all_locked();
             }
             });
+#endif
 
     decltype(tolock_) tmp;
 
@@ -597,6 +600,16 @@ void ALockGroup::lock_all(const std::function<void(void)>& yes_cb,
         auto &alock = p.first;
         auto &type = p.second;
 
+#ifdef COROUTINE
+        auto y_cb = [this, alock, ev] (uint64_t id){
+            this->locked_[alock] = id;
+            ev->add();
+        };
+        auto n_cb = [this, ev] (){
+            this->set_status(TIMEOUT);
+            ev->add();
+        };
+#else
         auto y_cb = [this, alock] (uint64_t id) {
             //		this->mtx_locks_.lock();
             this->locked_[alock] = id;
@@ -608,6 +621,7 @@ void ALockGroup::lock_all(const std::function<void(void)>& yes_cb,
             this->set_status(TIMEOUT);
             this->db_->trigger();
         };
+#endif
 
         auto _wound_callback = [this, alock] () -> int {
             int ret = wound_callback_();
@@ -621,6 +635,20 @@ void ALockGroup::lock_all(const std::function<void(void)>& yes_cb,
         //            alocks_[alock] = areq_id;
     }
     //        mtx_locks_.unlock();
+
+#ifdef COROUTINE
+    WAIT(ev);
+    delete ev;
+    
+    if (this->cas_status(WAIT, LOCK)) {
+        this->yes_callback_();
+    } else {
+        verify(this->get_status() == TIMEOUT);
+        this->no_callback_();
+        this->abort_all_locked();
+    }
+
+#endif
 }
 
 

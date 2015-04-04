@@ -129,6 +129,7 @@ void CoroMgr::mkcoroutine(fp f){
 	if (!(*_c)){
 		delete _c;
 	}else{
+	//	Log_info("reg callee: %x caller: %x", _c, _ca);
 		reg(_c, _ca);	
 	}
 //	show_map();
@@ -192,10 +193,9 @@ void CoroMgr::wait(Event* ev){
 		ev->status() == Event::CANCEL){
 		return;
 	}
-	
+
 	wait_event.push_back(ev);
-	Log_info("thread: %x, coroutine: %x, wait_event size: %d status: %d", pthread_self(), ev->ca, wait_event.size(), ev->status());
-	Log_info("current coroutine: %x", ev->ca);
+	//Log_info("thread: %x, coroutine: %x, wait_event size: %d status: %d ev: %x", pthread_self(), ev->ca, wait_event.size(), ev->status(), ev);
 	in_coroutine = false;
 	(*_ca)();
 }
@@ -218,23 +218,26 @@ bool CoroMgr::search_all_trigger(){
 }
 
 void CoroMgr::resume_triggered_event(){
-	//Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
+//	Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
     while(search_all_trigger())
     {   
         Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
         while(trigger_event.size() > 0){
             Event* ev = trigger_event[0];
-            coro_t* c = caller_map[ev->ca];
-            reg(ev->ca);
+            
+            coro_t::caller_type* ca = ev->ca;
+            coro_t* c = caller_map[ca];
 
-            Log_info("resume coroutine: %x", ev->ca);
+            reg(ca);
+
+        //    Log_info("resume coroutine: %x", ca);
             (*c)();
             if (!(*c)){
             	delete c;
             	callee_map.erase(c);
-            	caller_map.erase(ev->ca);
+            	caller_map.erase(ca);
             }
-            Log_info("resume coroutine: %x back", ev->ca);
+        //    Log_info("resume coroutine: %x back", ca);
             trigger_event.erase(trigger_event.begin());
         }
     }

@@ -9,6 +9,7 @@ public:
     int size;
     int count;
     DballEvent(coro_t::caller_type* c, int s=1): Event(c), size(s), count(0){
+    //    Log_info("create dball: %x", this);
     }
     void add(){
         count++; 
@@ -16,7 +17,7 @@ public:
         if (count == size){
             trigger();
         }
-        Log_info("lock event add trigger, count: %d, size: %d, status: %d", count, size, _status);
+    //    Log_info("lock event add trigger, count: %d, size: %d, status: %d", count, size, _status);
     }
 };
 

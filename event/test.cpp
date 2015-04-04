@@ -13,7 +13,7 @@
 using namespace rrr;
 
 void async(){
-	DballEvent* ev = new DballEvent(Coroutine::get_ca());
+	DballEvent* ev = new DballEvent(Coroutine::get_ca(), 1);
 	ev->add();
 
 	WAIT(ev);
@@ -37,7 +37,7 @@ void hello_coro(coro_t::caller_type& ca, int i, std::function<void (int, int)> f
 	Log_info("hello %d end", i);
 }
 
-void container(){
+void container(int t){
 	pthread_t pid = pthread_self();
 	Coroutine::reg_cmgr(pid);
 	CoroMgr* cmgr = Coroutine::get_cmgr(pid);
@@ -48,17 +48,16 @@ void container(){
 		*s = 1;
 	};
 
-	for (int i=0; i<5; i++){
+	for (int i=0; i<t; i++){
 		Log_info("========= new  Coroutine ========= ");
 		Coroutine::mkcoroutine(boost::bind(&hello_coro, _1, i, reply));
 		//hello(i, reply);
 	}
 
 	cmgr->resume_triggered_event();
- 	cmgr->recovery();
 }
-int main(){
+int main(int argc, char** argv){
 	Coroutine::init();	
 
-	container();
+	container(atoi(argv[1]));
 }
