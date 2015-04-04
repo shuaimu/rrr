@@ -20,6 +20,8 @@
 #include "utils.hpp"
 #include "polling.hpp"
 
+#include "event/event.hpp"
+
 using namespace std;
 
 namespace rrr {
@@ -110,6 +112,12 @@ PollMgr::~PollMgr() {
 }
 
 void PollMgr::PollThread::poll_loop() {
+
+#ifdef COROUTINE
+    pthread_t t = pthread_self();
+    CoroMgr* cmgr = Coroutine::reg_cmgr(t);
+#endif
+
     while (!stop_flag_) {
         const int max_nev = 100;
 
@@ -171,6 +179,14 @@ void PollMgr::PollThread::poll_loop() {
 	
 	trigger_fjob();
 
+#endif
+
+#ifdef COROUTINE
+        //after each poll loop, resume triggered coroutines and 
+        //recovery the useless
+
+        cmgr->resume_triggered_event();
+        cmgr->recovery();
 #endif
 
         // after each poll loop, remove uninterested pollables

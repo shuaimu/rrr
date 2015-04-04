@@ -15,10 +15,17 @@
 typedef boost::coroutines::coroutine< void(void) > coro_t;
 typedef boost::function< void(coro_t::caller_type&) > fp;
 
-#define coro_f(x, ...) void x(coro_t::caller_type& ca, __VA_ARGS__)
-//#define coro_f(x, ...) void x(__VA_ARGS__)
+#define COROUTINE
+
+#ifdef COROUTINE
+	#define coro_f(x, ...) void x(coro_t::caller_type& ca, __VA_ARGS__)
+	#define REG_CORO rrr::Coroutine::reg(&ca)
+#else
+	#define coro_f(x, ...) void x(__VA_ARGS__) 
+	#define REG_CORO {}
+#endif
+
 #define WAIT(x) rrr::Coroutine::wait(x)
-#define REG_CORO rrr::Coroutine::reg(&ca)
 #define REF(x) boost::ref(x)
 
 namespace rrr{
@@ -47,7 +54,7 @@ public:
 	void wait(Event*);
 	bool search_all_trigger();
 
-	void wait_for_all_finished();
+	void resume_triggered_event();
 
 	void show_map();
 };	
@@ -56,8 +63,10 @@ public:
 class Coroutine{
 public:
 	static std::map<pthread_t, CoroMgr*> cmgr_map;
-	static void reg_cmgr();
-	static void reg_cmgr(pthread_t pid);
+	static CoroMgr* reg_cmgr();
+	static CoroMgr* reg_cmgr(pthread_t pid);
+	static int reg_cmgr(pthread_t pid, CoroMgr* cmgr);
+
 	static CoroMgr* get_cmgr(pthread_t pid);	
 	
 	static void mkcoroutine(fp f);

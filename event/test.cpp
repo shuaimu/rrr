@@ -54,7 +54,7 @@ void container(){
 		//hello(i, reply);
 	}
 
-	cmgr->wait_for_all_finished();
+	cmgr->resume_triggered_event();
  	cmgr->recovery();
 }
 int main(){

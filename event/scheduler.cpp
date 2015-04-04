@@ -17,18 +17,33 @@ std::allocator<coro_t> allo;
 bool in_coroutine = false;
 pthread_t work_pid = 0;
 
-void Coroutine::reg_cmgr(pthread_t t){
+CoroMgr* Coroutine::reg_cmgr(pthread_t t){
+	Log_info("thread %x register CoroMgr");
 	if (cmgr_map.find(t) != cmgr_map.end()){
 		Log_error("current thread has been registered");
+		return cmgr_map[t];
 	}else{
 		pthread_mutex_lock(&coro_lock);
 		cmgr_map[t] = new CoroMgr();
 		pthread_mutex_unlock(&coro_lock);
+		return cmgr_map[t];
 	}
 }
-void Coroutine::reg_cmgr(){
+CoroMgr* Coroutine::reg_cmgr(){
 	pthread_t t = pthread_self();
-	reg_cmgr(t);
+	return reg_cmgr(t);
+}
+
+int Coroutine::reg_cmgr(pthread_t t, CoroMgr* cmgr){
+	int ret = 0;
+	if (cmgr_map.find(t) == cmgr_map.end()){
+		cmgr_map[t] = cmgr;
+	}else if (cmgr_map[t] != cmgr){
+		delete cmgr_map[t];
+		cmgr_map[t] = cmgr;
+		ret = 1;
+	}
+	return ret;
 }
 
 CoroMgr* Coroutine::get_cmgr(pthread_t pid){
@@ -39,6 +54,7 @@ CoroMgr* Coroutine::get_cmgr(pthread_t pid){
 }
 
 void Coroutine::mkcoroutine(fp f){
+	
 	pthread_t t = pthread_self();
 	if (cmgr_map.find(t) == cmgr_map.end()){
 		Log_info("register Coroutine manager");
@@ -49,11 +65,10 @@ void Coroutine::mkcoroutine(fp f){
 	}else{
 		verify(t == work_pid);
 	}
-	cmgr_map[t]->mkcoroutine(f); 
+	cmgr_map[t]->mkcoroutine(f);  
 }
 
 void Coroutine::reg(coro_t::caller_type* cat){
-	//verify(_c != NULL);
 	pthread_t t = pthread_self();
 //	Log_info("thread %x register coroutine %x", t, cat);
 	verify(cmgr_map.find(t) != cmgr_map.end());
@@ -107,19 +122,16 @@ void Coroutine::init(){
 }
 
 void CoroMgr::mkcoroutine(fp f){
-//	_c = new coro_t(f, attr, stack_allocator, allo);
-	coro_t c(f, attr, stack_allocator, allo);
-//	Log_info("insert c: %x  ca: %x", _c, _ca);
-//	c_set.push_back(_c);
-//	reg(_c, _ca);
+	_c = new coro_t(f, attr, stack_allocator, allo);
+//	coro_t c(f, attr, stack_allocator, allo);
 
+//	c_set.push_back(_c);
+	if (!(*_c)){
+		delete _c;
+	}else{
+		reg(_c, _ca);	
+	}
 //	show_map();
-//	wait_for_all_finished();
-/*	int i=0;
-	while ((*_c)){
-		Log_info("yeild %d times", ++i);
-		(*_c)();
-	}  */
 //	recovery();
 //	show_map();
 }
@@ -131,11 +143,6 @@ void CoroMgr::reg(coro_t::caller_type* ca){
 
 // build the map between caller and callee
 void CoroMgr::reg(coro_t* c, coro_t::caller_type* ca){ 
-/*	std::map<coro_t*, coro_t::caller_type*>::iterator it;
-	for (it=_map.begin(); it!=_map.end(); it++){
-		Log_info("in map: %x => %x", it->first, it->second);
-	}
-*/
 	if (callee_map.find(c) == callee_map.end()){
 		callee_map[c] = ca;
 	}
@@ -156,9 +163,11 @@ coro_t::caller_type* CoroMgr::get_ca(){
 }
 
 void CoroMgr::recovery(){ 
+	/*
+	std::vector<coro_t* > v;
 	for (int i=0; i<c_set.size(); ){
 		if (!(*c_set[i])){
-			Log_info("delete %x", c_set[i]);
+			//Log_info("delete %x", c_set[i]);
 
 			coro_t* c = c_set[i];
 			coro_t::caller_type* ca = callee_map[c];
@@ -166,26 +175,22 @@ void CoroMgr::recovery(){
 			callee_map.erase(c);
 			caller_map.erase(ca);
 
-			/*
-			std::map<coro_t*, coro_t::caller_type*>::iterator it;
-			for (it=_map.begin(); it!=_map.end(); it++){
-				Log_info("in map: %x => %x", it->first, it->second);
-			}*/			
-
 			delete c;
-			c_set.erase(c_set.begin() + i);
-			continue;
+			//c_set.erase(c_set.begin() + i);
 		}else{
-			Log_info("%x not finished", c_set[i]);
+			//Log_info("%x not finished", c_set[i]);
+			v.push_back(c_set[i]);
 		}
 		i++;
 	} 
+	c_set.clear();
+	c_set.swap(v); */
 }
 
 void CoroMgr::wait(Event* ev){
 	if (ev->status() == Event::TRIGGER || 
 		ev->status() == Event::CANCEL){
-		//return;
+		return;
 	}
 	
 	wait_event.push_back(ev);
@@ -212,10 +217,9 @@ bool CoroMgr::search_all_trigger(){
 	return find; 
 }
 
-void CoroMgr::wait_for_all_finished(){
+void CoroMgr::resume_triggered_event(){
 	//Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
-    while(search_all_trigger() || trigger_event.size() > 0 
-          || wait_event.size() > 0)
+    while(search_all_trigger())
     {   
         Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
         while(trigger_event.size() > 0){
@@ -225,9 +229,13 @@ void CoroMgr::wait_for_all_finished(){
 
             Log_info("resume coroutine: %x", ev->ca);
             (*c)();
+            if (!(*c)){
+            	delete c;
+            	callee_map.erase(c);
+            	caller_map.erase(ev->ca);
+            }
             Log_info("resume coroutine: %x back", ev->ca);
             trigger_event.erase(trigger_event.begin());
-     //       delete ev;
         }
     }
     //Log_info("all coroutine finished");
