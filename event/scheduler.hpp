@@ -58,6 +58,9 @@ public:
 	void resume_triggered_event();
 
 	void show_map();
+
+	virtual int get_next();
+	virtual void insert_trigger(Event*);
 };	
 
 

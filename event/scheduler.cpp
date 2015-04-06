@@ -19,7 +19,7 @@ pthread_t work_pid = 0;
 
 #ifdef COROUTINE_COUNT
 int coro_count = 0;
-int switch_cout = 0;
+int switch_count = 0;
 #endif
 
 CoroMgr* Coroutine::reg_cmgr(pthread_t t){
@@ -132,7 +132,7 @@ void Coroutine::init(){
 
 void Coroutine::report(){
 	Log_info("coroutine count: %d", coro_count);
-	Log_info("coroutine switch: %d", coro_count + switch_cout);
+	Log_info("coroutine switch: %d", switch_count);
 }
 #endif
 
@@ -210,7 +210,7 @@ void CoroMgr::wait(Event* ev){
 	}
 
 #ifdef COROUTINE_COUNT
-	switch_cout += 1;
+	switch_count += 1;
 #endif
 
 	wait_event.push_back(ev);
@@ -226,7 +226,8 @@ bool CoroMgr::search_all_trigger(){
 		Event* ev = (Event*)(*ite);
 		if (ev->status() == Event::TRIGGER){
 			wait_event.erase(ite);
-			trigger_event.push_back(ev);
+			//trigger_event.push_back(ev);
+			insert_trigger(ev);
 			find = true;
 			continue;
 		}
@@ -236,13 +237,22 @@ bool CoroMgr::search_all_trigger(){
 	return find; 
 }
 
+int CoroMgr::get_next(){
+	return 0;
+}
+
+void CoroMgr::insert_trigger(Event* ev){
+	trigger_event.push_back(ev);
+}
+
 void CoroMgr::resume_triggered_event(){
 //	Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
     while(search_all_trigger())
     {   
 //        Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
         while(trigger_event.size() > 0){
-            Event* ev = trigger_event[0];
+        	int t = get_next();
+            Event* ev = trigger_event[t];
             
             coro_t::caller_type* ca = ev->ca;
             coro_t* c = caller_map[ca];
@@ -257,7 +267,7 @@ void CoroMgr::resume_triggered_event(){
             	caller_map.erase(ca);
             }
         //    Log_info("resume coroutine: %x back", ca);
-            trigger_event.erase(trigger_event.begin());
+            trigger_event.erase(trigger_event.begin() + t);
         }
     }
     //Log_info("all coroutine finished");
