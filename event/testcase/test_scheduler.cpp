@@ -61,8 +61,11 @@ void container(){
 	int rank[10] = {3, 5, 2, 1, 4, 7, 9, 8, 6, 10};
 	for (int i=0; i<10; i++){
 		Log_info("========= new  Coroutine ========= ");
-
+#ifdef COROUTINE
 		Coroutine::mkcoroutine(boost::bind(&test, _1, rank[i], reply));
+#else 
+		test(rank[i], reply);
+#endif
 		//hello(i, reply);
 	}
 
