@@ -17,7 +17,7 @@ typedef boost::coroutines::coroutine<void(void)> coro_t;
 #define REF(x) boost::ref(x)
 
 #define SIZE 1024*128
-#define PRE_ALLOC_SIZE 2048
+#define PRE_ALLOC_SIZE 500
 
 int s;
 

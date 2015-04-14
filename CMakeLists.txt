@@ -1,3 +1,7 @@
+cmake_minimum_required(VERSION 2.8.4)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O0 -DCOROUTINE -DCOROUTINE_COUNT")
+
 include_directories(.)
 
 add_library(rrr
@@ -63,3 +67,61 @@ add_library(rrr
     rrr.h
     rrr.hpp
 )
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+find_package(Threads)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(APR REQUIRED apr-1)
+
+IF(APPLE)
+ELSE()
+pkg_check_modules(PYTHON2 REQUIRED python2)
+ENDIF()
+
+link_directories(
+	${PYTHON2_LIBRARY_DIRS}
+	${APR_LIBRARY_DIRS}
+	)
+
+include_directories(
+	${PYTHON2_INCLUDE_DIRS}
+	${APR_INCLUDE_DIRS}
+	.
+	)
+
+add_executable(func event/testcase/function.cpp)
+add_executable(blank_coroutine event/testcase/blank_coroutine.cpp)
+add_executable(switch event/testcase/switch.cpp)
+add_executable(coro_pool event/testcase/coro_pool.cpp)
+
+target_link_libraries(
+	coro_pool
+	rrr
+	${CMAKE_THREAD_LIBS_INIT}
+	"boost_coroutine"
+	"boost_context"
+	)
+target_link_libraries(
+	switch
+	rrr
+	${CMAKE_THREAD_LIBS_INIT}
+	"boost_coroutine"
+	"boost_context"
+	)
+
+target_link_libraries(
+	blank_coroutine
+	rrr
+	${CMAKE_THREAD_LIBS_INIT}
+	"boost_coroutine"
+	"boost_context"
+	)
+
+target_link_libraries(
+	func
+	rrr
+	${CMAKE_THREAD_LIBS_INIT}
+	"boost_coroutine"
+	"boost_context"
+	)
