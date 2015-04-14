@@ -55,23 +55,25 @@ class CoroPool{
 
 	std::unordered_map<coro_t *, caller_t *> callee_map;
 	std::unordered_map<caller_t *, coro_t *> caller_map;
-	coro_t* _c;
-	caller_t* _ca;
-
 	coro_t** _pool;
 	int _pool_num;
 	bool* _pool_used;
 
 	std::vector<coro_t*> _all_coro;
-
 public:
+	coro_t* _c;
+	caller_t* _ca;
+
 	void init(int size=1000){
 		_pool_num = size;
 		_pool = new coro_t*[size];
 		for (int i=0; i<size; i++){
 			coro_t* c = new coro_t(boost::bind(&CoroPool::main_loop, this, _1), 0);
+
+			_all_coro.push_back(c);
 			_c = c;
 			reg_ca();
+			
 			_pool[i] = c;
 		}
 	}

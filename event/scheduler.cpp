@@ -137,29 +137,26 @@ void Coroutine::report(){
 #endif
 
 void CoroMgr::mkcoroutine(fp f){
-	_c = new coro_t(f, attr, stack_allocator, allo);
-//	coro_t c(f, attr, stack_allocator, allo);
+	_pool.reg_function(f);
+//	_c = new coro_t(f, attr, stack_allocator, allo);
 
 //	c_set.push_back(_c);
-	if (!(*_c)){
+/*	if (!(*_c)){
 		delete _c;
 	}else{
 	//	Log_info("reg callee: %x caller: %x", _c, _ca);
 		reg(_c, _ca);	
-	}
-//	show_map();
-//	recovery();
-//	show_map();
+	} */
 }
 
 // tell CoroMgr the current coroutine caller
 void CoroMgr::reg(coro_t::caller_type* ca){
-	_ca = ca;	
+	//_ca = ca;	
 }
 
 // build the map between caller and callee
 void CoroMgr::reg(coro_t* c, coro_t::caller_type* ca){ 
-	if (callee_map.find(c) == callee_map.end()){
+/*	if (callee_map.find(c) == callee_map.end()){
 		callee_map[c] = ca;
 	}
 	verify(callee_map[c] == ca);
@@ -167,40 +164,18 @@ void CoroMgr::reg(coro_t* c, coro_t::caller_type* ca){
 	if (caller_map.find(ca) == caller_map.end()){
 		caller_map[ca] = c;
 	}
-	verify(caller_map[ca] == c);
+	verify(caller_map[ca] == c); */
 }
 
 coro_t* CoroMgr::get_c(){
-	return _c;
+	return _pool._c;
 }
 
 coro_t::caller_type* CoroMgr::get_ca(){
-	return _ca;
+	return _pool._ca;
 }
 
 void CoroMgr::recovery(){ 
-	/*
-	std::vector<coro_t* > v;
-	for (int i=0; i<c_set.size(); ){
-		if (!(*c_set[i])){
-			//Log_info("delete %x", c_set[i]);
-
-			coro_t* c = c_set[i];
-			coro_t::caller_type* ca = callee_map[c];
-
-			callee_map.erase(c);
-			caller_map.erase(ca);
-
-			delete c;
-			//c_set.erase(c_set.begin() + i);
-		}else{
-			//Log_info("%x not finished", c_set[i]);
-			v.push_back(c_set[i]);
-		}
-		i++;
-	} 
-	c_set.clear();
-	c_set.swap(v); */
 }
 
 void CoroMgr::wait(Event* ev){
@@ -215,8 +190,9 @@ void CoroMgr::wait(Event* ev){
 
 	wait_event.push_back(ev);
 	//Log_info("thread: %x, coroutine: %x, wait_event size: %d status: %d ev: %x", pthread_self(), ev->ca, wait_event.size(), ev->status(), ev);
-	in_coroutine = false;
-	(*_ca)();
+	//in_coroutine = false;
+
+	(*_pool._ca)();
 }
 
 bool CoroMgr::search_all_trigger(){
@@ -255,7 +231,7 @@ void CoroMgr::resume_triggered_event(){
             Event* ev = trigger_event[t];
             
             coro_t::caller_type* ca = ev->ca;
-            coro_t* c = caller_map[ca];
+/*            coro_t* c = caller_map[ca];
 
             reg(ca);
 
@@ -267,24 +243,12 @@ void CoroMgr::resume_triggered_event(){
             	caller_map.erase(ca);
             }
         //    Log_info("resume coroutine: %x back", ca);
+        */
+            _pool.yeildto(ca);
             trigger_event.erase(trigger_event.begin() + t);
         }
     }
     //Log_info("all coroutine finished");
-}
-
-void CoroMgr::show_map(){
-	Log_info("===========================");
-	Log_info("======= caller map ========");
-	auto key = caller_map.begin();
-	for (; key!=caller_map.end(); key++){
-		Log_info("%x --> %x", key->first, key->second);
-	}
-	Log_info("======= callee map ========");
-	for (key=callee_map.begin(); key!=callee_map.end(); key++){
-		Log_info("%x -> %x", key->first, key->second);
-	}
-	Log_info("===========================");
 }
 
 }

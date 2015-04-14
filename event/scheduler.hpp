@@ -12,15 +12,19 @@
 #include <set>
 #include <pthread.h>
 
-typedef boost::coroutines::coroutine< void(void) > coro_t;
-typedef boost::function< void(coro_t::caller_type&) > fp;
+#include "coroPool.hpp"
+
+//typedef boost::coroutines::coroutine< void(void) > coro_t;
+//typedef boost::function< void(coro_t::caller_type&) > fp;
+typedef boost::function< void() >* fp;
 
 //#define COROUTINE
 //#define COROUTINE_COUNT
 
 #ifdef COROUTINE
-	#define coro_f(x, ...) void x(coro_t::caller_type& ca, __VA_ARGS__)
-	#define REG_CORO rrr::Coroutine::reg(&ca)
+	//#define coro_f(x, ...) void x(coro_t::caller_type& ca, __VA_ARGS__)
+	#define coro_f(x, ...) void x(__VA_ARGS__) 
+	#define REG_CORO {} //rrr::Coroutine::reg(&ca)
 #else
 	#define coro_f(x, ...) void x(__VA_ARGS__) 
 	#define REG_CORO {}
@@ -33,15 +37,23 @@ namespace rrr{
 class Event;
 
 class CoroMgr{
-	std::vector<coro_t*> c_set;
-	coro_t* _c;
-	coro_t::caller_type* _ca;
+	//coro_t* _c;
+	//coro_t::caller_type* _ca;
 public:
-	std::map<coro_t*, coro_t::caller_type*> callee_map;
-	std::map<coro_t::caller_type*, coro_t*> caller_map;
+//	std::map<coro_t*, coro_t::caller_type*> callee_map;
+//	std::map<coro_t::caller_type*, coro_t*> caller_map;
 	
 	std::vector<Event* > trigger_event;
 	std::vector<Event* > wait_event;
+
+	CoroPool _pool;
+
+	CoroMgr(){
+		_pool.init();
+	}
+	~CoroMgr(){
+		_pool.release();
+	}
 
 	void mkcoroutine(fp f);
 	void reg(coro_t::caller_type*);
@@ -56,8 +68,6 @@ public:
 	bool search_all_trigger();
 
 	void resume_triggered_event();
-
-	void show_map();
 
 	virtual int get_next();
 	virtual void insert_trigger(Event*);

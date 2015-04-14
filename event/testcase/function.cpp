@@ -15,7 +15,7 @@ int func(){
 	
 }
 
-void coro(coro_t::caller_type& ca){
+void coro(){
 //	REG_CORO;
 }
 
@@ -44,7 +44,8 @@ int main(int argc, char** argv){
 		case '3':
 			for (int i=0; i<circle; i++){
 #ifdef COROUTINE
-				rrr::Coroutine::mkcoroutine(coro);
+				auto f = boost::function<void(void)>(coro);
+				rrr::Coroutine::mkcoroutine(&f);
 #else
 				coro();
 #endif

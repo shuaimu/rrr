@@ -4,7 +4,7 @@
 #include <boost/coroutine/stack_context.hpp>
 #include <vector>
 
-typedef boost::coroutines::coroutine<void(void)> coro_t;
+//typedef boost::coroutines::coroutine<void(void)> coro_t;
 
 #define STACK_SIZE 128*1024
 #define PRE_ALLOC_NUM 2048
