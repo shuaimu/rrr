@@ -50,7 +50,8 @@ void container(int t){
 
 	for (int i=0; i<t; i++){
 		Log_info("========= new  Coroutine ========= ");
-		Coroutine::mkcoroutine(boost::bind(&hello_coro, _1, i, reply));
+		fn f = boost::bind(&hello_coro, _1, i, reply);
+		Coroutine::mkcoroutine(&fn);
 		//hello(i, reply);
 	}
 

@@ -16,8 +16,8 @@
 
 //typedef boost::coroutines::coroutine< void(void) > coro_t;
 //typedef boost::function< void(coro_t::caller_type&) > fp;
-typedef boost::function< void() >* fp;
-
+typedef boost::function< void(void) >* fp;
+typedef boost::function< void(void) > fn;
 //#define COROUTINE
 //#define COROUTINE_COUNT
 

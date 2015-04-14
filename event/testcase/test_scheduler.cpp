@@ -62,7 +62,8 @@ void container(){
 	for (int i=0; i<10; i++){
 		Log_info("========= new  Coroutine ========= ");
 #ifdef COROUTINE
-		Coroutine::mkcoroutine(boost::bind(&test, _1, rank[i], reply));
+		boost::function<void(void)> f = boost::bind(&test, rank[i], reply);
+		Coroutine::mkcoroutine(&f);
 #else 
 		test(rank[i], reply);
 #endif

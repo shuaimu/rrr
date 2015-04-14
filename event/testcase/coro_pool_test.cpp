@@ -6,7 +6,7 @@ using namespace std;
 
 rrr::CoroPool pool;
 
-void test(){
+void test(int i){
 }
 
 void main_loop(caller_t& ca){
@@ -33,7 +33,7 @@ int main(int argc, char**  argv){
 
 	long t1 = clock();
 	for (int i=0; i<t; i++){
-		auto f = boost::function<void(void)> (test);
+		boost::function<void (void)> f = boost::bind(&test, 1);
 //		c(&f);
 		pool.reg_function(&f);
 	}
