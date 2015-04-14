@@ -26,7 +26,7 @@ void main_loop(caller_t& ca){
 
 int main(int argc, char**  argv){
 	long t0 = clock();
-	pool.init();
+	pool.init(1000);
 	int t = atoi(argv[1]);
 
 	coro_t c(main_loop, 0);
@@ -34,7 +34,8 @@ int main(int argc, char**  argv){
 	long t1 = clock();
 	for (int i=0; i<t; i++){
 		auto f = boost::function<void(void)> (test);
-		c(&f);
+//		c(&f);
+		pool.reg_function(&f);
 	}
 	long t2 = clock();
 

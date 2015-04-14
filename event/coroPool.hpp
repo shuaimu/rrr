@@ -4,6 +4,7 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include "base/logging.hpp"
+#include <unordered_map>
 
 typedef boost::function<void(void)> fn;
 typedef boost::coroutines::coroutine< void(fn*) > coro_t;
@@ -52,8 +53,8 @@ class CoroPool{
 		}
 	}
 
-	std::map<coro_t *, caller_t *> callee_map;
-	std::map<caller_t *, coro_t *> caller_map;
+	std::unordered_map<coro_t *, caller_t *> callee_map;
+	std::unordered_map<caller_t *, coro_t *> caller_map;
 	coro_t* _c;
 	caller_t* _ca;
 
