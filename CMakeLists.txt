@@ -93,10 +93,10 @@ include_directories(
 add_executable(func event/testcase/function.cpp)
 add_executable(blank_coroutine event/testcase/blank_coroutine.cpp)
 add_executable(switch event/testcase/switch.cpp)
-add_executable(coro_pool event/testcase/coro_pool.cpp)
+add_executable(coro_pool_test event/testcase/coro_pool_test.cpp)
 
 target_link_libraries(
-	coro_pool
+	coro_pool_test
 	rrr
 	${CMAKE_THREAD_LIBS_INIT}
 	"boost_coroutine"
