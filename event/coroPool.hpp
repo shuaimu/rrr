@@ -31,7 +31,7 @@ class CoroPool{
 
 	void release(caller_t* ca){
 		coro_t* c = caller_map[ca];
-		_pool.push_back(c);
+		_pool[++_pool_num] = c;
 	}
 
 	void main_loop(caller_t& ca){
@@ -57,25 +57,25 @@ class CoroPool{
 	coro_t* _c;
 	caller_t* _ca;
 
-	std::vector<coro_t*> _pool;
+	coro_t** _pool;
+	int _pool_num;
+	bool* _pool_used;
 
-	coro_t* alloc_coro(){
-		coro_t* c = _pool.back();
-		_pool.pop_back();
-		return c;
-	}
+	std::vector<coro_t*> _all_coro;
 
 public:
 	void init(int size=1000){
+		_pool_num = size;
+		_pool = new coro_t*[size];
 		for (int i=0; i<size; i++){
 			coro_t* c = new coro_t(boost::bind(&CoroPool::main_loop, this, _1), 0);
 			_c = c;
 			reg_ca();
-			_pool.push_back(c);
+			_pool[i] = c;
 		}
 	}
 	void reg_function(fn* f){
-		coro_t* c = alloc_coro();
+		coro_t* c = _pool[ --_pool_num ];
 		(*c)(f);
 	}
 	void yeild(){
@@ -88,7 +88,7 @@ public:
 	}
 
 	void release(){
-		for (auto &c: _pool){
+		for (auto &c: _all_coro){
 			(*c)(0);
 		}
 	}
