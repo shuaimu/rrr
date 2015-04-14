@@ -64,6 +64,7 @@ add_library(rrr
     utils/safe_assert.h
     event/fastStackAllocator.cpp
     event/scheduler.cpp
+    event/coroPool.cpp
     rrr.h
     rrr.hpp
 )
@@ -94,6 +95,15 @@ add_executable(func event/testcase/function.cpp)
 add_executable(blank_coroutine event/testcase/blank_coroutine.cpp)
 add_executable(switch event/testcase/switch.cpp)
 add_executable(coro_pool_test event/testcase/coro_pool_test.cpp)
+add_executable(test_scheduler event/testcase/test_scheduler.cpp)
+
+target_link_libraries(
+    test_scheduler
+    rrr
+    ${CMAKE_THREAD_LIBS_INIT}
+    "boost_coroutine"
+    "boost_context"
+    )
 
 target_link_libraries(
 	coro_pool_test

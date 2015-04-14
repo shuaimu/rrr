@@ -41,10 +41,15 @@ void yeild(int i){
 }
 
 coro_f(test, int i, std::function<void(int, int)> f){
-	REG_CORO;
 	f(i, 0);
 	yeild(i);
 	f(i, 1);
+	yeild(i);
+	f(i, 2);
+	yeild(i);
+	f(i, 3);
+	yeild(i);
+	f(i, 4);
 }
 
 void container(){
@@ -70,10 +75,14 @@ void container(){
 		//hello(i, reply);
 	}
 
-	for (auto ev: v){
-		ev->trigger();
+	for (int i=0; i<4; i++){
+		for (auto ev: v){
+			ev->trigger();
+		}
+		Log_info("v size: %d", v.size());
+		v.clear();
+		cmgr->resume_triggered_event();
 	}
-	cmgr->resume_triggered_event();
 }
 
 int main(){

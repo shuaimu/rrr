@@ -15,11 +15,11 @@ public:
     }
     void add(){
         count++; 
+       // Log_info("%x lock event add trigger, count: %d, size: %d, cur_ca: %x", this, count, size, Coroutine::get_ca());
         verify(count <= size);
         if (count == size){
             trigger();
         }
-    //    Log_info("lock event add trigger, count: %d, size: %d, status: %d", count, size, _status);
     }
 };
 

@@ -56,8 +56,8 @@ public:
 	}
 
 	void mkcoroutine(fp f);
-	void reg(coro_t::caller_type*);
-	void reg(coro_t*, coro_t::caller_type*);
+//	void reg(coro_t::caller_type*);
+//	void reg(coro_t*, coro_t::caller_type*);
 	
 	coro_t* get_c();
 	coro_t::caller_type* get_ca();

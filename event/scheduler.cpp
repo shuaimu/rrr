@@ -79,13 +79,13 @@ void Coroutine::reg(coro_t::caller_type* cat){
 	pthread_t t = pthread_self();
 //	Log_info("thread %x register coroutine %x", t, cat);
 	verify(cmgr_map.find(t) != cmgr_map.end());
-	cmgr_map[t]->reg(cat);
+//	cmgr_map[t]->reg(cat);
 }
 
 void Coroutine::reg(coro_t* c, coro_t::caller_type* cat){
 	pthread_t t = pthread_self();
 	verify(cmgr_map.find(t) != cmgr_map.end());
-	cmgr_map[t]->reg(c, cat);
+//	cmgr_map[t]->reg(c, cat);
 }
 
 coro_t* Coroutine::get_c(){
@@ -97,7 +97,8 @@ coro_t* Coroutine::get_c(){
 coro_t::caller_type* Coroutine::get_ca(){
 	pthread_t t = pthread_self();
 	verify(cmgr_map.find(t) != cmgr_map.end());
-	return cmgr_map[t]->get_ca();
+	coro_t::caller_type* ca = cmgr_map[t]->get_ca();
+	return ca;
 }
 
 void Coroutine::yeild(){
@@ -150,22 +151,13 @@ void CoroMgr::mkcoroutine(fp f){
 }
 
 // tell CoroMgr the current coroutine caller
-void CoroMgr::reg(coro_t::caller_type* ca){
+/*void CoroMgr::reg(coro_t::caller_type* ca){
 	//_ca = ca;	
 }
 
 // build the map between caller and callee
 void CoroMgr::reg(coro_t* c, coro_t::caller_type* ca){ 
-/*	if (callee_map.find(c) == callee_map.end()){
-		callee_map[c] = ca;
-	}
-	verify(callee_map[c] == ca);
-
-	if (caller_map.find(ca) == caller_map.end()){
-		caller_map[ca] = c;
-	}
-	verify(caller_map[ca] == c); */
-}
+} */
 
 coro_t* CoroMgr::get_c(){
 	return _pool._c;
@@ -192,7 +184,7 @@ void CoroMgr::wait(Event* ev){
 	//Log_info("thread: %x, coroutine: %x, wait_event size: %d status: %d ev: %x", pthread_self(), ev->ca, wait_event.size(), ev->status(), ev);
 	//in_coroutine = false;
 
-	(*_pool._ca)();
+	_pool.yeild();
 }
 
 bool CoroMgr::search_all_trigger(){
@@ -225,25 +217,12 @@ void CoroMgr::resume_triggered_event(){
 //	Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
     while(search_all_trigger())
     {   
-//        Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
+        //Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
         while(trigger_event.size() > 0){
         	int t = get_next();
-            Event* ev = trigger_event[t];
-            
+            Event* ev = trigger_event[t];            
             coro_t::caller_type* ca = ev->ca;
-/*            coro_t* c = caller_map[ca];
 
-            reg(ca);
-
-        //    Log_info("resume coroutine: %x", ca);
-            (*c)();
-            if (!(*c)){
-            	delete c;
-            	callee_map.erase(c);
-            	caller_map.erase(ca);
-            }
-        //    Log_info("resume coroutine: %x back", ca);
-        */
             _pool.yeildto(ca);
             trigger_event.erase(trigger_event.begin() + t);
         }

@@ -579,6 +579,8 @@ void ALockGroup::lock_all(const std::function<void(void)>& yes_cb,
     no_callback_ = no_cb;
 
 #ifdef COROUTINE
+    coro_t::caller_type* ca = Coroutine::get_ca();
+    Log_info("mkevent cur ca: %x", ca);
     DballEvent* ev = new DballEvent(Coroutine::get_ca(), tolock_.size());
 #else
     db_ = new DragonBall(tolock_.size(), [this] () {
