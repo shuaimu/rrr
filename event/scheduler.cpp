@@ -4,6 +4,7 @@
 #include "fastStackAllocator.hpp"
 #include <vector>
 
+#ifdef COROUTINE
 namespace rrr{
 std::map<pthread_t, CoroMgr*> Coroutine::cmgr_map;
 
@@ -126,7 +127,7 @@ void Coroutine::init(){
 	pthread_mutex_init(&coro_lock, NULL);
 	pthread_cond_init(&coro_cond, NULL);
 
-	MyAllocator::init();
+//	MyAllocator::init();
 }
 
 #ifdef COROUTINE_COUNT
@@ -231,3 +232,5 @@ void CoroMgr::resume_triggered_event(){
 }
 
 }
+
+#endif

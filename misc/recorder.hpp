@@ -9,6 +9,8 @@
 #include "base/threading.hpp"
 #include "marshal.hpp"
 
+#include "event/event.hpp"
+
 namespace rrr {
 
 class Recorder : public FrequentJob {
@@ -26,7 +28,11 @@ public:
 
     uint64_t batch_time_ = 10 * 1000; // 10ms
 
+#ifdef COROUTINE
+    typedef std::pair<std::string, Event* > io_req_t;
+#else
     typedef std::pair<std::string, std::function<void(void)> > io_req_t;
+#endif
 
     std::list<io_req_t*> *flush_reqs_;
     std::list<io_req_t*> *callback_reqs_;
@@ -41,12 +47,17 @@ public:
     Recorder(const char *path);
 
     //    void submit(const std::string &buf);
-
+#ifdef COROUTINE
+    void submit(const std::string &buf, Event* ev = NULL);
+    void submit(Marshal &m, Event* ev = NULL);
+    
+#else
     void submit(const std::string &buf, 
 		const std::function<void(void)> &cb = std::function<void(void)>());
 
     void submit(Marshal &m,
                 const std::function<void(void)> &cb = std::function<void(void)>());
+#endif
 
     void flush_buf();
 

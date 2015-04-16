@@ -13,6 +13,8 @@
 #include <chrono>
 
 #include "base/logging.hpp"
+#include "base/debugging.hpp"
+
 #include "stat.hpp"
 #include "recorder.hpp"
 
@@ -62,17 +64,33 @@ void Recorder::flush_loop() {
 //    std::function<void(void)> empty_func;
 //    submit(buf, empty_func);
 //}
+#ifdef COROUTINE
+void Recorder::submit(const std::string &buf, Event* cb) {
 
+    io_req_t *req = new io_req_t(buf, cb);
+    ScopedLock(this->mtx_);
+    flush_reqs_->push_back(req);
+}
+
+void Recorder::submit(Marshal &m, Event* cb) {
+    io_req_t *req = new io_req_t();
+    std::string &s = req->first;
+    req->second = cb;
+
+    s.resize(m.content_size());
+    m.write((void*)s.data(), m.content_size());
+
+    ScopedLock(this->mtx_);
+    flush_reqs_->push_back(req);
+}
+
+#else
 void Recorder::submit(const std::string &buf,
 		      const std::function<void(void)> &cb) {
 
     io_req_t *req = new io_req_t(buf, cb);
     ScopedLock(this->mtx_);
     flush_reqs_->push_back(req);
-
-//    if (cb) {
-//        cd_flush_.notify_one();
-//    }
 }
 
 void Recorder::submit(Marshal &m,
@@ -87,6 +105,7 @@ void Recorder::submit(Marshal &m,
     ScopedLock(this->mtx_);
     flush_reqs_->push_back(req);
 }
+#endif
 
 void Recorder::flush_buf() {
     mtx_.lock();
@@ -147,7 +166,11 @@ void Recorder::invoke_cb() {
     for (auto &p: *reqs) {
         auto &cb = p->second;
         if (cb) {
+#ifdef COROUTINE
+            cb->trigger();
+#else
             cb();
+#endif
         }
         delete p;
     }

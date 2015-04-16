@@ -5,6 +5,7 @@
 *************************************************************************/
 #pragma once
 
+
 #include <boost/coroutine/all.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
@@ -32,6 +33,8 @@ typedef boost::function< void(void) > fn;
 
 #define WAIT(x) rrr::Coroutine::wait(x)
 #define REF(x) boost::ref(x)
+
+#ifdef COROUTINE
 
 namespace rrr{
 class Event;
@@ -104,3 +107,4 @@ public:
 };
 } // namespace base
 
+#endif

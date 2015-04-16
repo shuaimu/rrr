@@ -1,3 +1,5 @@
+#ifdef COROUTINE
+
 #include "coroPool.hpp"
 
 namespace rrr{
@@ -88,3 +90,5 @@ namespace rrr{
 		}
 	}
 }
+
+#endif

@@ -1,6 +1,8 @@
 #pragma once
-
 #include "event.hpp"
+
+#ifdef COROUTINE
+
 #include "base/debugging.hpp"
 #include "base/logging.hpp"
 
@@ -24,3 +26,5 @@ public:
 };
 
 }
+
+#endif

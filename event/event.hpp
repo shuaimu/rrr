@@ -2,15 +2,15 @@
 
 #include "scheduler.hpp"
 
+#ifdef COROUTINE
 namespace rrr{
 class Event{
 public:
 	enum status_t{
 		WAIT, CANCEL, TRIGGER
 	};
-	status_t _status;
-
 	coro_t::caller_type* ca;
+	status_t _status;
 
 	Event(coro_t::caller_type* t): ca(t), _status(WAIT){
 	}
@@ -28,3 +28,5 @@ public:
 };
 
 }
+
+#endif
