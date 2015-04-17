@@ -23,7 +23,6 @@ typedef boost::function< void(void) > fn;
 //#define COROUTINE_COUNT
 
 #ifdef COROUTINE
-	//#define coro_f(x, ...) void x(coro_t::caller_type& ca, __VA_ARGS__)
 	#define coro_f(x, ...) void x(__VA_ARGS__) 
 	#define REG_CORO {} //rrr::Coroutine::reg(&ca)
 #else
@@ -90,8 +89,8 @@ public:
 	static void reg(coro_t::caller_type*);
 	static void reg(coro_t* c, coro_t::caller_type* ca);
 	
-	static coro_t* get_c();
-	static coro_t::caller_type* get_ca();
+	static coro_t* get_c(pthread_t t=0);
+	static coro_t::caller_type* get_ca(pthread_t t=0);
 
 	// do we need interface of yeild? or just wait
 	static void yeild();

@@ -29,10 +29,11 @@ public:
     uint64_t batch_time_ = 10 * 1000; // 10ms
 
 #ifdef COROUTINE
-    typedef std::pair<std::string, Event* > io_req_t;
-#else
-    typedef std::pair<std::string, std::function<void(void)> > io_req_t;
+    typedef std::pair<std::string, Event* > ev_req_t;
+    std::list<ev_req_t*> *ev_flush_reqs_;
+    std::list<ev_req_t*> *ev_callback_reqs_;
 #endif
+    typedef std::pair<std::string, std::function<void(void)> > io_req_t;
 
     std::list<io_req_t*> *flush_reqs_;
     std::list<io_req_t*> *callback_reqs_;
@@ -48,16 +49,15 @@ public:
 
     //    void submit(const std::string &buf);
 #ifdef COROUTINE
-    void submit(const std::string &buf, Event* ev = NULL);
-    void submit(Marshal &m, Event* ev = NULL);
+    void submit_ev(const std::string &buf, Event* ev = NULL);
+    void submit_ev(Marshal &m, Event* ev = NULL);
     
-#else
+#endif
     void submit(const std::string &buf, 
 		const std::function<void(void)> &cb = std::function<void(void)>());
 
     void submit(Marshal &m,
                 const std::function<void(void)> &cb = std::function<void(void)>());
-#endif
 
     void flush_buf();
 
@@ -85,6 +85,13 @@ public:
     }
     
     ~Recorder();
+    
+#ifdef COROUTINE
+    pthread_t pid;
+    void set_pid(pthread_t p){
+        pid = p;
+    }
+#endif
 };
 
 } // namespace rrr

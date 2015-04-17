@@ -53,6 +53,8 @@ public:
     // Frequent Job
     void add(FrequentJob*);
     void remove(FrequentJob*);
+
+    pthread_t get_pid();
 };
 
 } // namespace rrr

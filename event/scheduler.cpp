@@ -24,7 +24,7 @@ int switch_count = 0;
 #endif
 
 CoroMgr* Coroutine::reg_cmgr(pthread_t t){
-	Log_info("thread %x register CoroMgr");
+	Log_info("thread %x register CoroMgr", t);
 	if (cmgr_map.find(t) != cmgr_map.end()){
 		Log_error("current thread has been registered");
 		return cmgr_map[t];
@@ -89,14 +89,16 @@ void Coroutine::reg(coro_t* c, coro_t::caller_type* cat){
 //	cmgr_map[t]->reg(c, cat);
 }
 
-coro_t* Coroutine::get_c(){
-	pthread_t t = pthread_self();
+coro_t* Coroutine::get_c(pthread_t t){
+	if (t == 0)
+		t = pthread_self();
 	verify(cmgr_map.find(t) != cmgr_map.end());
 	return cmgr_map[t]->get_c();
 }
 
-coro_t::caller_type* Coroutine::get_ca(){
-	pthread_t t = pthread_self();
+coro_t::caller_type* Coroutine::get_ca(pthread_t t){
+	if (t == 0)
+		t = pthread_self();
 	verify(cmgr_map.find(t) != cmgr_map.end());
 	coro_t::caller_type* ca = cmgr_map[t]->get_ca();
 	return ca;
@@ -182,9 +184,6 @@ void CoroMgr::wait(Event* ev){
 #endif
 
 	wait_event.push_back(ev);
-	//Log_info("thread: %x, coroutine: %x, wait_event size: %d status: %d ev: %x", pthread_self(), ev->ca, wait_event.size(), ev->status(), ev);
-	//in_coroutine = false;
-
 	_pool.yeild();
 }
 
@@ -215,7 +214,7 @@ void CoroMgr::insert_trigger(Event* ev){
 }
 
 void CoroMgr::resume_triggered_event(){
-//	Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
+	//Log_info("pthread: %x, wait_event size: %d, trigger_event size: %d", pthread_self(), wait_event.size(), trigger_event.size()); 
     while(search_all_trigger())
     {   
         //Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
@@ -223,7 +222,7 @@ void CoroMgr::resume_triggered_event(){
         	int t = get_next();
             Event* ev = trigger_event[t];            
             coro_t::caller_type* ca = ev->ca;
-
+            Log_info("resume ca %x cur thread %x", ca, pthread_self());
             _pool.yeildto(ca);
             trigger_event.erase(trigger_event.begin() + t);
         }

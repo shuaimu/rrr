@@ -96,6 +96,10 @@ public:
 
     void add(FrequentJob*);
     void remove(FrequentJob*);
+
+    pthread_t get_pid(){
+        return th_;
+    }
 };
 
 PollMgr::PollMgr(int n_threads /* =... */): n_threads_(n_threads) {
@@ -115,7 +119,7 @@ void PollMgr::PollThread::poll_loop() {
 
 #ifdef COROUTINE
     pthread_t t = pthread_self();
-    CoroMgr* cmgr = Coroutine::reg_cmgr(t);
+    CoroMgr* cmgr = Coroutine::reg_cmgr(t); 
 #endif
 
     while (!stop_flag_) {
@@ -439,4 +443,7 @@ void PollMgr::remove(FrequentJob* fjob) {
     poll_threads_[tid].remove(fjob);
 }
 
+pthread_t PollMgr::get_pid(){
+    return poll_threads_[0].get_pid();
+}
 } // namespace rrr

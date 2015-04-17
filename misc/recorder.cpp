@@ -37,7 +37,10 @@ Recorder::Recorder(const char *path) {
 
     flush_reqs_ = new std::list<io_req_t*>();
     callback_reqs_ = new std::list<io_req_t*>();
-
+#ifdef COROUTINE
+    ev_flush_reqs_ = new std::list<ev_req_t*>();
+    ev_callback_reqs_ = new std::list<ev_req_t*>();
+#endif
 
     th_flush_ = new std::thread(&Recorder::flush_loop, this);
 
@@ -65,15 +68,14 @@ void Recorder::flush_loop() {
 //    submit(buf, empty_func);
 //}
 #ifdef COROUTINE
-void Recorder::submit(const std::string &buf, Event* cb) {
-
-    io_req_t *req = new io_req_t(buf, cb);
+void Recorder::submit_ev(const std::string &buf, Event* cb) {
+    ev_req_t *req = new ev_req_t(buf, cb);
     ScopedLock(this->mtx_);
-    flush_reqs_->push_back(req);
+    ev_flush_reqs_->push_back(req);
 }
 
-void Recorder::submit(Marshal &m, Event* cb) {
-    io_req_t *req = new io_req_t();
+void Recorder::submit_ev(Marshal &m, Event* cb) {
+    ev_req_t *req = new ev_req_t();
     std::string &s = req->first;
     req->second = cb;
 
@@ -81,10 +83,10 @@ void Recorder::submit(Marshal &m, Event* cb) {
     m.write((void*)s.data(), m.content_size());
 
     ScopedLock(this->mtx_);
-    flush_reqs_->push_back(req);
+    ev_flush_reqs_->push_back(req);
 }
 
-#else
+#endif
 void Recorder::submit(const std::string &buf,
 		      const std::function<void(void)> &cb) {
 
@@ -105,9 +107,9 @@ void Recorder::submit(Marshal &m,
     ScopedLock(this->mtx_);
     flush_reqs_->push_back(req);
 }
-#endif
 
 void Recorder::flush_buf() {
+//    Log_info("flush_buf");
     mtx_.lock();
 
     int cnt_flush = 0;
@@ -119,10 +121,21 @@ void Recorder::flush_buf() {
     if (sz > 0) {
 	flush_reqs_ = new std::list<io_req_t*>;
     }
+#ifdef COROUTINE
+    auto ev_reqs = ev_flush_reqs_;
+    int ev_sz = ev_flush_reqs_->size();
+    if (ev_sz > 0){
+        ev_flush_reqs_ = new std::list<ev_req_t*>;
+    }
+#endif
 
     mtx_.unlock();
 
-    if (sz == 0) {
+    if (sz == 0
+#ifdef COROUTINE
+        && ev_sz == 0
+#endif
+        ) {
 	return;
     }
 
@@ -133,6 +146,16 @@ void Recorder::flush_buf() {
         cnt_flush ++;
         sz_flush += ret;
     }
+#ifdef COROUTINE
+    for (auto &p: *ev_reqs) {
+        std::string &s = p->first;
+        int ret = write(fd_, s.data(), s.size());
+        verify(ret == s.size());
+        cnt_flush ++;
+        sz_flush += ret;
+    }
+#endif
+
 #ifndef __APPLE__
     fdatasync(fd_);
 #endif
@@ -145,6 +168,11 @@ void Recorder::flush_buf() {
     mtx_.lock();
     callback_reqs_->insert(callback_reqs_->end(),
                            reqs->begin(), reqs->end());
+#ifdef COROUTINE
+    ev_callback_reqs_->insert(ev_callback_reqs_->end(), 
+                           ev_reqs->begin(), ev_reqs->end());
+#endif
+
     mtx_.unlock();
     return;
 
@@ -157,24 +185,38 @@ void Recorder::invoke_cb() {
     if (sz > 0) {
         callback_reqs_ = new std::list<io_req_t*>;
     }
+#ifdef COROUTINE
+    int ev_sz = ev_callback_reqs_->size();
+    auto ev_reqs = ev_callback_reqs_;
+    if (ev_sz > 0){
+        ev_callback_reqs_ = new std::list<ev_req_t*>;
+    }
+#endif
     mtx_.unlock();
 
-    if (sz == 0) {
-        return;
+    if (sz !=0){
+        for (auto &p: *reqs) {
+            auto &cb = p->second;
+            if (cb) {
+                cb();
+            }
+            delete p;
+        }
+        delete reqs;
     }
 
-    for (auto &p: *reqs) {
-        auto &cb = p->second;
-        if (cb) {
 #ifdef COROUTINE
-            cb->trigger();
-#else
-            cb();
-#endif
+    if (ev_sz != 0){
+        for (auto &p: *ev_reqs){
+            auto &cb = p->second;
+            if (cb){
+                cb->trigger();
+            }
+            delete p;
         }
-        delete p;
+        delete ev_reqs;
     }
-    delete reqs;
+#endif
 }
 
 Recorder::~Recorder() {
