@@ -32,11 +32,12 @@ typedef boost::function< void(void) > fn;
 
 #define WAIT(x) rrr::Coroutine::wait(x)
 #define REF(x) boost::ref(x)
-
+#define GETCA()  rrr::Coroutine::get_ca()
 #ifdef COROUTINE
 
 namespace rrr{
 class Event;
+class Coroutine;
 
 class CoroMgr{
 	//coro_t* _c;
@@ -50,9 +51,7 @@ public:
 
 	CoroPool _pool;
 
-	CoroMgr(){
-		_pool.init();
-	}
+	CoroMgr();
 	~CoroMgr(){
 		_pool.release();
 	}
@@ -76,8 +75,10 @@ public:
 };	
 
 
-class Coroutine{
+class Coroutine{;
 public:
+	static int pool_size;
+
 	static std::map<pthread_t, CoroMgr*> cmgr_map;
 	static CoroMgr* reg_cmgr();
 	static CoroMgr* reg_cmgr(pthread_t pid);
@@ -99,7 +100,7 @@ public:
 	static void yeildto(coro_t* c);	
 
 	static void recovery();
-	static void init();
+	static void init(int size = 1000);
 #ifdef COROUTINE_COUNT
 	static void report();
 #endif

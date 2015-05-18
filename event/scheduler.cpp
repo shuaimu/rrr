@@ -23,6 +23,8 @@ int coro_count = 0;
 int switch_count = 0;
 #endif
 
+int Coroutine::pool_size;
+
 CoroMgr* Coroutine::reg_cmgr(pthread_t t){
 	Log_info("thread %x register CoroMgr", t);
 	if (cmgr_map.find(t) != cmgr_map.end()){
@@ -67,11 +69,6 @@ void Coroutine::mkcoroutine(fp f){
 	if (cmgr_map.find(t) == cmgr_map.end()){
 		Log_info("register Coroutine manager");
 		reg_cmgr();
-	}
-	if (work_pid == 0){
-		work_pid = t;
-	}else{
-		verify(t == work_pid);
 	}
 	cmgr_map[t]->mkcoroutine(f);  
 }
@@ -125,10 +122,11 @@ void Coroutine::recovery(){
 	cmgr_map[t]->recovery();
 }
 
-void Coroutine::init(){
+void Coroutine::init(int size){
 	pthread_mutex_init(&coro_lock, NULL);
 	pthread_cond_init(&coro_cond, NULL);
-
+	
+	pool_size = size;
 //	MyAllocator::init();
 }
 
@@ -161,6 +159,11 @@ void CoroMgr::mkcoroutine(fp f){
 // build the map between caller and callee
 void CoroMgr::reg(coro_t* c, coro_t::caller_type* ca){ 
 } */
+
+CoroMgr::CoroMgr(){
+	Log_info("pool size: %d", Coroutine::pool_size);
+	_pool.init(Coroutine::pool_size);
+}
 
 coro_t* CoroMgr::get_c(){
 	return _pool._c;
@@ -222,7 +225,7 @@ void CoroMgr::resume_triggered_event(){
         	int t = get_next();
             Event* ev = trigger_event[t];            
             coro_t::caller_type* ca = ev->ca;
-            Log_info("resume ca %x cur thread %x", ca, pthread_self());
+//            Log_info("resume ca %x cur thread %x", ca, pthread_self());
             _pool.yeildto(ca);
             trigger_event.erase(trigger_event.begin() + t);
         }

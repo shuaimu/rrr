@@ -24,7 +24,11 @@ int main(int argc, char** argv){
 	int circle = atoi(argv[2]);
 
 #ifdef COROUTINE
-	rrr::Coroutine::init();
+	int size = 100;
+	if (argc > 3){
+		size = atoi(argv[3]);
+	}
+	rrr::Coroutine::init(size);
 #endif
     auto f = [=](){
 
@@ -32,29 +36,38 @@ int main(int argc, char** argv){
 	long begin = clock();
 	switch (mod){
 		case '1':
+			{
 			for (int i=0; i<circle; i++){
 				func();
 			}
 			break;
+			}
 		case '2':
 			for (int i=0; i<circle; i++){
 				f();
 			}
 			break;
 		case '3':
+			{
+
+#ifdef COROUTINE
+			auto f1 = boost::function<void(void)>(coro);
+#endif
 			for (int i=0; i<circle; i++){
 #ifdef COROUTINE
-				auto f = boost::function<void(void)>(coro);
-				rrr::Coroutine::mkcoroutine(&f);
+			//	auto f1 = boost::function<void(void)>(coro);
+				rrr::Coroutine::mkcoroutine(&f1);
 #else
 				coro();
 #endif
 			}
 			break;
+			}
 		default:
 			cout << "wrong" << endl;
 	}
 	cout << "time: " << (clock()-begin)/1000 << endl;
+	rrr::Coroutine::report();
 }
 
 
