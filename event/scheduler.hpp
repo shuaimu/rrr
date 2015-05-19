@@ -32,7 +32,8 @@ typedef boost::function< void(void) > fn;
 
 #define WAIT(x) rrr::Coroutine::wait(x)
 #define REF(x) boost::ref(x)
-#define GETCA()  rrr::Coroutine::get_ca()
+#define GET_CA()  rrr::Coroutine::get_ca()
+#define GET_CP()  rrr::Coroutine::get_cp()
 #ifdef COROUTINE
 
 namespace rrr{
@@ -62,6 +63,7 @@ public:
 	
 	coro_t* get_c();
 	coro_t::caller_type* get_ca();
+	CoroPair* get_cp();
 
 	void recovery();
 	
@@ -92,6 +94,7 @@ public:
 	
 	static coro_t* get_c(pthread_t t=0);
 	static coro_t::caller_type* get_ca(pthread_t t=0);
+	static CoroPair* get_cp(pthread_t t=0);
 
 	// do we need interface of yeild? or just wait
 	static void yeild();

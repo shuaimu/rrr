@@ -10,7 +10,7 @@ std::vector<Event*> v;
 class PriorityEvent: public Event{
 public:
 	int _p;
-	PriorityEvent(coro_t::caller_type* ca, int p):Event(ca), _p(p){
+	PriorityEvent(CoroPair* ca, int p):Event(ca), _p(p){
 	}
 };
 
@@ -34,7 +34,7 @@ public:
 };
 
 void yeild(int i){
-	PriorityEvent* ev = new PriorityEvent(Coroutine::get_ca(), i);
+	PriorityEvent* ev = new PriorityEvent(GET_CP(), i);
 	v.push_back(ev);
 	WAIT(ev);
 	delete ev;

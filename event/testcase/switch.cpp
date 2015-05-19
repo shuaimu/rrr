@@ -61,5 +61,5 @@ int main(int argc, char** argv){
 #endif
 	
 	long end = clock();
-	cout << "time: " << end - begin << endl;
+	cout << "time: " << (end - begin)/1000000.0 << endl;
 }

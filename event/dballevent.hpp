@@ -12,7 +12,7 @@ class DballEvent:public Event{
 public:
     int size;
     int count;
-    DballEvent(coro_t::caller_type* c, int s=1): Event(c), size(s), count(0){
+    DballEvent(CoroPair* c, int s=1): Event(c), size(s), count(0){
     //    Log_info("create dball: %x", this);
     }
     void add(){

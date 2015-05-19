@@ -101,6 +101,13 @@ coro_t::caller_type* Coroutine::get_ca(pthread_t t){
 	return ca;
 }
 
+CoroPair* Coroutine::get_cp(pthread_t t){
+	if (t == 0)
+		t = pthread_self();
+	verify(cmgr_map.find(t) != cmgr_map.end());
+	return cmgr_map[t]->get_cp();
+}
+
 void Coroutine::yeild(){
 }
 
@@ -173,6 +180,9 @@ coro_t::caller_type* CoroMgr::get_ca(){
 	return _pool._ca;
 }
 
+CoroPair* CoroMgr::get_cp(){
+	return _pool.current_pair;
+}
 void CoroMgr::recovery(){ 
 }
 
@@ -224,9 +234,9 @@ void CoroMgr::resume_triggered_event(){
         while(trigger_event.size() > 0){
         	int t = get_next();
             Event* ev = trigger_event[t];            
-            coro_t::caller_type* ca = ev->ca;
+//            coro_t::caller_type* ca = ev->ca;
 //            Log_info("resume ca %x cur thread %x", ca, pthread_self());
-            _pool.yeildto(ca);
+            _pool.yeildto(ev->cp);
             trigger_event.erase(trigger_event.begin() + t);
         }
     }

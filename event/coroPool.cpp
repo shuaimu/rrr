@@ -21,9 +21,8 @@ namespace rrr{
 		verify(caller_map[ca] == c);
 	}
 
-	void CoroPool::release(caller_t* ca){
-		coro_t* c = caller_map[ca];
-		_pool[_pool_num++] = c;
+	void CoroPool::release(CoroPair* cp){
+		_pool[_pool_num++] = cp;
 		//Log_info("release ca: %x _pool_num: %d", ca, _pool_num);
 	}
 
@@ -39,7 +38,7 @@ namespace rrr{
 				break;
 			}else{
 				(*f)();
-				release(&ca);
+				release(current_pair);
 				ca();
 			}
 		}
@@ -47,46 +46,42 @@ namespace rrr{
 
 	void CoroPool::init(int size){
 		_pool_num = size;
-		_pool = new coro_t*[size];
+		_pool = new CoroPair*[size];
 		for (int i=0; i<size; i++){
 			coro_t* c = new coro_t(boost::bind(&CoroPool::main_loop, this, _1), 0);
 
-			_all_coro.push_back(c);
-			_c = c;
-			reg();
-			
-			_pool[i] = c;
+			_pool[i] = new CoroPair;
+			_pool[i]->c = c; _pool[i]->ca = _ca;
+			current_pair = _pool[i];
+
+			_all_coro.push_back(current_pair);
 		}
 	}
 	void CoroPool::reg_function(fn* f){
 		if (_pool_num < 1){
-			Log_error("coroutine pool is empty");
+		//	Log_error("coroutine pool is empty");
 			return;
 		}
-		coro_t* c = _pool[ --_pool_num ];		
-		caller_t* ca = callee_map[c];
-		reg_ca(ca);
+		coro_t* c = _pool[ --_pool_num]->c;
+		current_pair = _pool[_pool_num];
 
 		//Log_info("CoroPool num : %d  alloc ca: %x", _pool_num, _ca);
 		(*c)(f);
 	}
 	void CoroPool::yeild(){
-		coro_t* c = caller_map[_ca];
 		//Log_info("coro: %x, caller: %x, yeild", c, _ca);
-		(*_ca)();
+		(*(current_pair->ca))();
 	}
-	void CoroPool::yeildto(caller_t* ca){
-		coro_t* c = caller_map[ca];
-		reg_ca(ca);
-		
+	void CoroPool::yeildto(CoroPair* cp){
+		current_pair = cp;
 		//Log_info("coro: %x, caller: %x,resume coroutine", c, ca);
-		(*c)(0);
+		(*(cp->c))(0);
 	}
 
 	void CoroPool::release(){
-		for (auto &c: _all_coro){
-			(*c)(0);
-			delete c;
+		for (auto &cp: _all_coro){
+			(*(cp->c))(0);
+			delete cp;
 		}
 	}
 }

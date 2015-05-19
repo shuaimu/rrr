@@ -9,10 +9,10 @@ public:
 	enum status_t{
 		WAIT, CANCEL, TRIGGER
 	};
-	coro_t::caller_type* ca;
+	CoroPair* cp;
 	status_t _status;
 
-	Event(coro_t::caller_type* t): ca(t), _status(WAIT){
+	Event(CoroPair* t): cp(t), _status(WAIT){
 	}
 	void trigger(){
 		_status = TRIGGER;	

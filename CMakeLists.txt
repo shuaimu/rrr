@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.4)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -DCOROUTINE -DCOROUTINE_COUNT -DFP")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O0 -DCOROUTINE -DCOROUTINE_COUNT")
 
 include_directories(.)
 
@@ -99,39 +99,19 @@ add_executable(test_scheduler event/testcase/test_scheduler.cpp)
 
 target_link_libraries(
     test_scheduler
-    rrr
-    ${CMAKE_THREAD_LIBS_INIT}
-    "boost_coroutine"
-    "boost_context"
-    )
+    rrr   ${CMAKE_THREAD_LIBS_INIT}   "boost_coroutine"   "boost_context")
 
 target_link_libraries(
 	coro_pool_test
-	rrr
-	${CMAKE_THREAD_LIBS_INIT}
-	"boost_coroutine"
-	"boost_context"
-	)
+	rrr	${CMAKE_THREAD_LIBS_INIT}	"boost_coroutine"	"boost_context"	)
+
 target_link_libraries(
 	switch
-	rrr
-	${CMAKE_THREAD_LIBS_INIT}
-	"boost_coroutine"
-	"boost_context"
-	)
+	rrr	${CMAKE_THREAD_LIBS_INIT}	"boost_coroutine"	"boost_context"	)
 
 target_link_libraries(
 	blank_coroutine
-	rrr
-	${CMAKE_THREAD_LIBS_INIT}
-	"boost_coroutine"
-	"boost_context"
-	)
+	rrr	${CMAKE_THREAD_LIBS_INIT}	"boost_coroutine"	"boost_context"	)
 
 target_link_libraries(
-	func
-	rrr
-	${CMAKE_THREAD_LIBS_INIT}
-	"boost_coroutine"
-	"boost_context"
-	)
+	func	rrr	${CMAKE_THREAD_LIBS_INIT}	"boost_coroutine"	"boost_context"	)

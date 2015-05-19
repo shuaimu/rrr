@@ -13,7 +13,7 @@
 using namespace rrr;
 
 void async(){
-	DballEvent* ev = new DballEvent(Coroutine::get_ca(), 1);
+	DballEvent* ev = new DballEvent(GET_CP(), 1);
 	ev->add();
 
 	WAIT(ev);
