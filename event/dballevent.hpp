@@ -20,7 +20,7 @@ public:
        // Log_info("%x lock event add trigger, count: %d, size: %d, cur_ca: %x", this, count, size, Coroutine::get_ca());
         verify(count <= size);
         if (count == size){
-            trigger();
+            ready();
         }
     }
 };

@@ -210,7 +210,7 @@ void Recorder::invoke_cb() {
         for (auto &p: *ev_reqs){
             auto &cb = p->second;
             if (cb){
-                cb->trigger();
+                cb->ready();
             }
             delete p;
         }

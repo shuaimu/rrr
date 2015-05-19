@@ -47,7 +47,7 @@ public:
 //	std::map<coro_t*, coro_t::caller_type*> callee_map;
 //	std::map<coro_t::caller_type*, coro_t*> caller_map;
 	
-	std::vector<Event* > trigger_event;
+	std::vector<Event* > ready_event;
 	std::vector<Event* > wait_event;
 
 	CoroPool _pool;

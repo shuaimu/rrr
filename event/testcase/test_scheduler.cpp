@@ -18,15 +18,15 @@ class Scheduler: public CoroMgr{
 public:
 	void insert_trigger(Event* _e){
 		PriorityEvent* ev = (PriorityEvent*)_e;
-		int t = trigger_event.size();
-		for (int i=0; i<trigger_event.size(); i++){
-			PriorityEvent *tev = (PriorityEvent*)trigger_event[i];
+		int t = ready_event.size();
+		for (int i=0; i<ready_event.size(); i++){
+			PriorityEvent *tev = (PriorityEvent*)ready_event[i];
 			if ( tev->_p > ev->_p){
 				t = i;
 				break;
 			}
 		}
-		trigger_event.insert(trigger_event.begin() + t, ev);
+		ready_event.insert(ready_event.begin() + t, ev);
 	}
 	int get_next(){
 		return 0;
@@ -76,7 +76,7 @@ void container(){
 
 	for (int i=0; i<4; i++){
 		for (auto ev: v){
-			ev->trigger();
+			ev->ready();
 		}
 		Log_info("v size: %d", v.size());
 		v.clear();

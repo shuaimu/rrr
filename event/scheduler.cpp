@@ -144,11 +144,17 @@ void CoroMgr::wait(Event* ev){
 		ev->status() == Event::CANCEL){
 		return;
 	}
+	if (ev->status() == Event::READY){
+		ev->trigger();
+		return;
+	}
+	assert(ev->status() == Event::IDLE);
 
 #ifdef COROUTINE_COUNT
 	switch_count += 1;
 #endif
 
+	ev->wait();
 	wait_event.push_back(ev);
 	_pool.yeild();
 }
@@ -158,9 +164,8 @@ bool CoroMgr::search_all_trigger(){
 	auto ite = wait_event.begin();
 	for (; ite != wait_event.end(); ){
 		Event* ev = (Event*)(*ite);
-		if (ev->status() == Event::TRIGGER){
+		if (ev->status() == Event::READY){
 			wait_event.erase(ite);
-			//trigger_event.push_back(ev);
 			insert_trigger(ev);
 			find = true;
 			continue;
@@ -176,24 +181,20 @@ int CoroMgr::get_next(){
 }
 
 void CoroMgr::insert_trigger(Event* ev){
-	trigger_event.push_back(ev);
+	ready_event.push_back(ev);
 }
 
 void CoroMgr::resume_triggered_event(){
-	//Log_info("pthread: %x, wait_event size: %d, trigger_event size: %d", pthread_self(), wait_event.size(), trigger_event.size()); 
     while(search_all_trigger())
     {   
-        //Log_info("search all trigger, wait_event size: %d, trigger_event size: %d", wait_event.size(), trigger_event.size()); 
-        while(trigger_event.size() > 0){
+        while(ready_event.size() > 0){
         	int t = get_next();
-            Event* ev = trigger_event[t];            
-//            coro_t::caller_type* ca = ev->ca;
-//            Log_info("resume ca %x cur thread %x", ca, pthread_self());
+            Event* ev = ready_event[t];
+            ev->trigger();            
             _pool.yeildto(ev->cp);
-            trigger_event.erase(trigger_event.begin() + t);
+            ready_event.erase(ready_event.begin() + t);
         }
     }
-    //Log_info("all coroutine finished");
 }
 
 }
