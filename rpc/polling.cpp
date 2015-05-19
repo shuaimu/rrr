@@ -119,7 +119,7 @@ void PollMgr::PollThread::poll_loop() {
 
 #ifdef COROUTINE
     pthread_t t = pthread_self();
-    CoroMgr* cmgr = Coroutine::reg_cmgr(t); 
+    CoroMgr* cmgr = Coroutine::reg_cmgr(); 
 #endif
 
     while (!stop_flag_) {

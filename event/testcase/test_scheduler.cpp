@@ -53,9 +53,8 @@ coro_f(test, int i, std::function<void(int, int)> f){
 }
 
 void container(){
-	pthread_t pid = pthread_self();
 	CoroMgr* cmgr = new Scheduler();
-	Coroutine::reg_cmgr(pid, cmgr);
+	Coroutine::reg_cmgr(cmgr);
 
 	int *s = new int;
 	auto reply = [=](int i, int j){

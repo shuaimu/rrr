@@ -51,11 +51,11 @@ int main(int argc, char** argv){
 			{
 
 #ifdef COROUTINE
-			auto f1 = boost::function<void(void)>(coro);
+			//auto f1 = boost::function<void(void)>(coro);
 #endif
 			for (int i=0; i<circle; i++){
 #ifdef COROUTINE
-			//	auto f1 = boost::function<void(void)>(coro);
+				auto f1 = boost::function<void(void)>(coro);
 				rrr::Coroutine::mkcoroutine(&f1);
 #else
 				coro();

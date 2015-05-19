@@ -58,11 +58,7 @@ public:
 	}
 
 	void mkcoroutine(fp f);
-//	void reg(coro_t::caller_type*);
-//	void reg(coro_t*, coro_t::caller_type*);
 	
-	coro_t* get_c();
-	coro_t::caller_type* get_ca();
 	CoroPair* get_cp();
 
 	void recovery();
@@ -80,27 +76,19 @@ public:
 class Coroutine{;
 public:
 	static int pool_size;
+	static pthread_key_t coroMgr_key;
 
 	static std::map<pthread_t, CoroMgr*> cmgr_map;
 	static CoroMgr* reg_cmgr();
-	static CoroMgr* reg_cmgr(pthread_t pid);
-	static int reg_cmgr(pthread_t pid, CoroMgr* cmgr);
+	static int reg_cmgr(CoroMgr* cmgr);
 
-	static CoroMgr* get_cmgr(pthread_t pid);	
+	static CoroMgr* get_cmgr();	
+	static CoroMgr* get_current_cmgr();
 	
 	static void mkcoroutine(fp f);
-	static void reg(coro_t::caller_type*);
-	static void reg(coro_t* c, coro_t::caller_type* ca);
-	
-	static coro_t* get_c(pthread_t t=0);
-	static coro_t::caller_type* get_ca(pthread_t t=0);
 	static CoroPair* get_cp(pthread_t t=0);
 
-	// do we need interface of yeild? or just wait
-	static void yeild();
 	static void wait(Event*);
-
-	static void yeildto(coro_t* c);	
 
 	static void recovery();
 	static void init(int size = 1000);

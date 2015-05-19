@@ -24,109 +24,86 @@ int switch_count = 0;
 #endif
 
 int Coroutine::pool_size;
+pthread_key_t Coroutine::coroMgr_key;
 
-CoroMgr* Coroutine::reg_cmgr(pthread_t t){
-	Log_info("thread %x register CoroMgr", t);
-	if (cmgr_map.find(t) != cmgr_map.end()){
-		Log_error("current thread has been registered");
-		return cmgr_map[t];
-	}else{
-		pthread_mutex_lock(&coro_lock);
-		cmgr_map[t] = new CoroMgr();
-		pthread_mutex_unlock(&coro_lock);
-		return cmgr_map[t];
-	}
-}
 CoroMgr* Coroutine::reg_cmgr(){
 	pthread_t t = pthread_self();
-	return reg_cmgr(t);
+	Log_info("thread %x register CoroMgr", t);
+	//if (cmgr_map.find(t) != cmgr_map.end()){
+	CoroMgr* cmgr = (CoroMgr*)pthread_getspecific(coroMgr_key);
+	Log_info("cmgr %x", cmgr);
+	if(cmgr != NULL){
+		Log_error("current thread has been registered");
+		//return cmgr_map[t];
+		return cmgr;
+	}else{
+		cmgr = new CoroMgr();
+		reg_cmgr(cmgr);
+		return cmgr;
+	}
 }
 
-int Coroutine::reg_cmgr(pthread_t t, CoroMgr* cmgr){
+int Coroutine::reg_cmgr(CoroMgr* cmgr){
 	int ret = 0;
-	if (cmgr_map.find(t) == cmgr_map.end()){
+	//pthread_t t = pthread_self();
+	pthread_mutex_lock(&coro_lock);
+	/*if (cmgr_map.find(t) == cmgr_map.end()){
 		cmgr_map[t] = cmgr;
 	}else if (cmgr_map[t] != cmgr){
 		delete cmgr_map[t];
 		cmgr_map[t] = cmgr;
 		ret = 1;
+	}*/
+	CoroMgr* c = (CoroMgr*)pthread_getspecific(coroMgr_key);
+	if (c != NULL){
+		delete c;
+		ret = 1;
 	}
+	pthread_setspecific(coroMgr_key, cmgr);
+
+	pthread_mutex_unlock(&coro_lock);
 	return ret;
 }
 
-CoroMgr* Coroutine::get_cmgr(pthread_t pid){
+CoroMgr* Coroutine::get_cmgr(){
+	pthread_t pid = pthread_self();
 	if (cmgr_map.find(pid) == cmgr_map.end()){
-		reg_cmgr(pid);
+		reg_cmgr();
 	}
 	return cmgr_map[pid];
+}
+
+CoroMgr* Coroutine::get_current_cmgr(){
+	CoroMgr* cmgr = (CoroMgr*)pthread_getspecific(coroMgr_key);
+	if (cmgr == NULL){
+		cmgr = reg_cmgr();
+	}
+	return cmgr;
 }
 
 void Coroutine::mkcoroutine(fp f){
 #ifdef COROUTINE_COUNT
 	coro_count += 1;
 #endif	
-	pthread_t t = pthread_self();
-	if (cmgr_map.find(t) == cmgr_map.end()){
-		Log_info("register Coroutine manager");
-		reg_cmgr();
-	}
-	cmgr_map[t]->mkcoroutine(f);  
-}
-
-void Coroutine::reg(coro_t::caller_type* cat){
-	pthread_t t = pthread_self();
-//	Log_info("thread %x register coroutine %x", t, cat);
-	verify(cmgr_map.find(t) != cmgr_map.end());
-//	cmgr_map[t]->reg(cat);
-}
-
-void Coroutine::reg(coro_t* c, coro_t::caller_type* cat){
-	pthread_t t = pthread_self();
-	verify(cmgr_map.find(t) != cmgr_map.end());
-//	cmgr_map[t]->reg(c, cat);
-}
-
-coro_t* Coroutine::get_c(pthread_t t){
-	if (t == 0)
-		t = pthread_self();
-	verify(cmgr_map.find(t) != cmgr_map.end());
-	return cmgr_map[t]->get_c();
-}
-
-coro_t::caller_type* Coroutine::get_ca(pthread_t t){
-	if (t == 0)
-		t = pthread_self();
-	verify(cmgr_map.find(t) != cmgr_map.end());
-	coro_t::caller_type* ca = cmgr_map[t]->get_ca();
-	return ca;
+	(get_current_cmgr())->mkcoroutine(f);
 }
 
 CoroPair* Coroutine::get_cp(pthread_t t){
-	if (t == 0)
-		t = pthread_self();
-	verify(cmgr_map.find(t) != cmgr_map.end());
-	return cmgr_map[t]->get_cp();
-}
-
-void Coroutine::yeild(){
-}
-
-void Coroutine::yeildto(coro_t *ct){	
+	if (t == 0){
+		return (get_current_cmgr())->get_cp();
+	}
+	else{
+		Log_error("try to get CoroMgr in another thread");
+		return NULL;
+	}
 }
 
 void Coroutine::wait(Event* ev){
-	pthread_t t = pthread_self();
-	verify(cmgr_map.find(t) != cmgr_map.end());
-	cmgr_map[t]->wait(ev);
+	(get_current_cmgr())->wait(ev);
 }
 
 void Coroutine::recovery(){
-	pthread_t t = pthread_self();
-	if (cmgr_map.find(t) == cmgr_map.end()){
-		Log_info("register Coroutine manager");
-		reg_cmgr();
-	}
-	cmgr_map[t]->recovery();
+	(get_current_cmgr())->recovery();
 }
 
 void Coroutine::init(int size){
@@ -134,6 +111,8 @@ void Coroutine::init(int size){
 	pthread_cond_init(&coro_cond, NULL);
 	
 	pool_size = size;
+	pthread_key_create(&coroMgr_key, NULL);
+	Log_info("coroMgr_key %s", pthread_getspecific(coroMgr_key) );
 //	MyAllocator::init();
 }
 
@@ -147,37 +126,11 @@ void Coroutine::report(){
 
 void CoroMgr::mkcoroutine(fp f){
 	_pool.reg_function(f);
-//	_c = new coro_t(f, attr, stack_allocator, allo);
-
-//	c_set.push_back(_c);
-/*	if (!(*_c)){
-		delete _c;
-	}else{
-	//	Log_info("reg callee: %x caller: %x", _c, _ca);
-		reg(_c, _ca);	
-	} */
 }
-
-// tell CoroMgr the current coroutine caller
-/*void CoroMgr::reg(coro_t::caller_type* ca){
-	//_ca = ca;	
-}
-
-// build the map between caller and callee
-void CoroMgr::reg(coro_t* c, coro_t::caller_type* ca){ 
-} */
 
 CoroMgr::CoroMgr(){
 	Log_info("pool size: %d", Coroutine::pool_size);
 	_pool.init(Coroutine::pool_size);
-}
-
-coro_t* CoroMgr::get_c(){
-	return _pool._c;
-}
-
-coro_t::caller_type* CoroMgr::get_ca(){
-	return _pool._ca;
 }
 
 CoroPair* CoroMgr::get_cp(){
