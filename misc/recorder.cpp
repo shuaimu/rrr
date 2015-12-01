@@ -67,7 +67,7 @@ void Recorder::submit(const std::string &buf,
 		      const std::function<void(void)> &cb) {
 
     io_req_t *req = new io_req_t(buf, cb);
-    ScopedLock(this->mtx_);
+    ScopedLock lock(this->mtx_);
     flush_reqs_->push_back(req);
 
 //    if (cb) {
@@ -84,7 +84,7 @@ void Recorder::submit(Marshal &m,
     s.resize(m.content_size());
     m.write((void*)s.data(), m.content_size());
 
-    ScopedLock(this->mtx_);
+    ScopedLock lock(this->mtx_);
     flush_reqs_->push_back(req);
 }
 
